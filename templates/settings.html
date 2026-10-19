@@ -1,12 +1,12 @@
-<details class="cs-settings-details" id="cs-settings-drawer">
+<details class="cs-settings-details" id="cs-settings-drawer" open>
     <summary class="cs-settings-summary">
         <span class="cs-summary-title">纪行手记 · 设置与多维词库</span>
         <span class="cs-summary-arrow">▼</span>
     </summary>
 
     <div class="cs-drawer-inner" id="cs-drawer-inner">
-        <!-- 基础开关面板 -->
-        <div class="cs-setting-group">
+        <!-- 1. 基础开关面板 -->
+        <div class="cs-card-section">
             <div class="cs-toggle-row">
                 <span class="cs-toggle-label">自动下发格式指令</span>
                 <label class="cs-switch">
@@ -23,60 +23,84 @@
                     <span class="cs-slider"></span>
                 </label>
             </div>
-            <p class="cs-hint-text">自动抓取手记数据并把楼层正文里的原始标签隐藏，保持小说沉浸阅读感。</p>
+            <p class="cs-hint-text">自动抓取手记数据并把正文里的原始标签隐藏，保持小说沉浸阅读感。</p>
+
+            <div class="cs-toggle-row" style="margin-top: 8px;">
+                <span class="cs-toggle-label">深度故事编写指南 (自动附带叙事法则)</span>
+                <label class="cs-switch">
+                    <input type="checkbox" id="cs-narrative-guide-toggle" checked>
+                    <span class="cs-slider"></span>
+                </label>
+            </div>
+            <p class="cs-hint-text">点击手记启程、探秘、野炊等动作时，自动无痕注入顶级小说创作法则（杜绝空洞套话、五感落地、伴侣眼神拉丝与肢体微动作），无需世界书条目也能输出细腻文学质感。</p>
         </div>
 
-        <div class="cs-divider" style="margin: 10px 0;"></div>
-
-        <!-- 词库预设与全局操作 -->
-        <div class="cs-setting-group">
-            <div class="cs-row-between" style="align-items: center; margin-bottom: 8px;">
-                <label class="cs-toggle-label" for="cs-active-preset-select">当前运行词库：</label>
-                <div class="cs-btn-group">
-                    <button type="button" class="menu_button" id="cs-export-pool-btn" title="导出当前词库 JSON">导出</button>
-                    <button type="button" class="menu_button" id="cs-import-pool-btn" title="上传自定义 JSON">导入</button>
-                    <input type="file" id="cs-pool-file-input" accept=".json" style="display: none;">
-                    <button type="button" class="menu_button" id="cs-reset-pool-btn" title="重置回官方默认预设" style="color: #e74c3c;">重置</button>
-                </div>
+        <!-- 2. 词库预设与全局操作 -->
+        <div class="cs-card-section">
+            <div class="cs-label-row">
+                <span class="cs-toggle-label">当前运行词库：</span>
             </div>
-            <select id="cs-active-preset-select" class="text_pole" style="width: 100%; margin-bottom: 10px;">
+            <select id="cs-active-preset-select" class="text_pole cs-full-select">
                 <option value="eorzea">艾欧泽亚传奇 (高魔古典奇幻)</option>
                 <option value="modern">都市漫游录 (现代甜蜜生活)</option>
                 <option value="custom">我的专属自定义词库</option>
             </select>
+            <div class="cs-action-btn-grid">
+                <button type="button" class="menu_button" id="cs-export-pool-btn" title="导出当前词库 JSON">导出词库</button>
+                <button type="button" class="menu_button" id="cs-import-pool-btn" title="上传自定义 JSON">导入词库</button>
+                <input type="file" id="cs-pool-file-input" accept=".json" style="display: none;">
+                <button type="button" class="menu_button" id="cs-reset-pool-btn" style="color: #e74c3c;">恢复默认</button>
+            </div>
         </div>
 
-        <!-- 一级大类选择（横向滑动胶囊） -->
-        <div class="cs-tabs-header" id="cs-category-tabs">
-            <button type="button" class="cs-tab-btn active" data-cat="voyage">未知漫游</button>
-            <button type="button" class="cs-tab-btn" data-cat="dungeon">秘境迷宫</button>
-            <button type="button" class="cs-tab-btn" data-cat="cook">荒野野炊</button>
-            <button type="button" class="cs-tab-btn" data-cat="danger">突发险情</button>
-            <button type="button" class="cs-tab-btn" data-cat="beast">奇珍萌物</button>
-            <button type="button" class="cs-tab-btn" data-cat="outfit">风尚衣箱</button>
-            <button type="button" class="cs-tab-btn" data-cat="camp_topics">营火夜谈</button>
-            <button type="button" class="cs-tab-btn" data-cat="souvenirs">纪念行囊</button>
-            <button type="button" class="cs-tab-btn" data-cat="photos">旅途拍立得</button>
+        <!-- 3. 玩法分类选择（下拉框，窄屏完美适配） -->
+        <div class="cs-card-section">
+            <div class="cs-label-row">
+                <span class="cs-toggle-label">选择玩法大类：</span>
+            </div>
+            <select id="cs-category-select" class="text_pole cs-full-select">
+                <option value="voyage">🧭 漫游探索 (地界/人群/事态/心绪)</option>
+                <option value="dungeon">🏛️ 禁区探秘 (迷宫/机关/阻碍/通关)</option>
+                <option value="cook">🍳 美食烹饪 (菜名/口感/相伴)</option>
+                <option value="danger">⚡ 突发状况 (异变/险境/庇护)</option>
+                <option value="beast">🐾 奇珍生灵 (生灵/习性/破防)</option>
+                <option value="outfit">👗 风尚穿搭 (风格/细节/小动作)</option>
+                <option value="camp_topics">⛺ 夜话密语 (夜聊话题)</option>
+                <option value="souvenirs">📦 纪念信物 (信物/外观/回忆)</option>
+                <option value="photos">📷 拍立得记录 (分镜/光影/批注)</option>
+            </select>
+
+            <!-- 大类标题自定义修改 -->
+            <div class="cs-label-row" style="margin-top: 10px;">
+                <span class="cs-toggle-label" style="font-size: 11.5px; opacity: 0.85;">当前大类显示标题：</span>
+            </div>
+            <div class="cs-inline-add-bar">
+                <input type="text" id="cs-category-name-input" class="text_pole" placeholder="修改当前大类标题..." style="flex: 1;">
+                <button type="button" class="menu_button" id="cs-rename-category-btn" title="保存大类标题">保存标题</button>
+            </div>
+
+            <!-- 二级小类（槽位 Slot）胶囊栏 -->
+            <div class="cs-label-row" style="margin-top: 10px;">
+                <span class="cs-toggle-label" style="font-size: 11.5px; opacity: 0.85;">细分槽位：</span>
+            </div>
+            <div class="cs-slot-bar" id="cs-slots-container">
+                <!-- 动态生成小类槽位按钮 -->
+            </div>
         </div>
 
-        <!-- 二级小类（槽位 Slot）选择栏 -->
-        <div class="cs-slot-bar" id="cs-slots-container">
-            <!-- 动态生成当前大类下的所有小类按钮，如：[秘境地界] [遇逢生灵] [当地事态] [旅伴心绪] -->
-        </div>
-
-        <!-- 当前小类下的词条管理区 -->
-        <div class="cs-words-box">
+        <!-- 4. 独立词条气泡标签池与添加栏 -->
+        <div class="cs-card-section cs-words-section">
             <div class="cs-words-header">
                 <span id="cs-current-slot-title" class="cs-slot-title">词条列表</span>
-                <span id="cs-slot-count" class="cs-badge">0 个</span>
+                <span id="cs-slot-count" class="cs-badge">0 个词</span>
             </div>
 
-            <!-- 词条气泡标签池（点击 × 即可删除单个词） -->
+            <!-- 词条气泡容器 -->
             <div class="cs-pills-container" id="cs-pills-container">
-                <!-- 动态渲染词条胶囊 -->
+                <!-- 动态渲染词条气泡 -->
             </div>
 
-            <!-- 快速添加单个词条栏 -->
+            <!-- 快速添加单行栏 -->
             <div class="cs-inline-add-bar">
                 <input type="text" id="cs-new-word-input" class="text_pole" placeholder="输入新词条..." style="flex: 1;">
                 <button type="button" class="menu_button primary" id="cs-add-word-btn">+ 添加</button>

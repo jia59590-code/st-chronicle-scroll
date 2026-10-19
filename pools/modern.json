@@ -5,7 +5,7 @@
   "theme": "modern",
   "categories": {
     "voyage": {
-      "name": "未知漫游",
+      "name": "街区漫游",
       "slots": {
         "biome": {
           "name": "城市街角",
@@ -55,7 +55,7 @@
       }
     },
     "dungeon": {
-      "name": "秘境迷宫",
+      "name": "特色探店",
       "slots": {
         "name": {
           "name": "都市迷宫",
@@ -98,7 +98,7 @@
       }
     },
     "cook": {
-      "name": "荒野野炊",
+      "name": "深夜食堂",
       "slots": {
         "dish": {
           "name": "美味名称",
@@ -131,7 +131,7 @@
       }
     },
     "danger": {
-      "name": "突发险情",
+      "name": "意外插曲",
       "slots": {
         "event": {
           "name": "突发险情",
@@ -163,7 +163,7 @@
       }
     },
     "beast": {
-      "name": "奇珍萌物",
+      "name": "街角萌宠",
       "slots": {
         "name": {
           "name": "萌物命名",
@@ -195,7 +195,7 @@
       }
     },
     "outfit": {
-      "name": "风尚衣箱",
+      "name": "情侣穿搭",
       "slots": {
         "style": {
           "name": "穿搭风格",
@@ -227,7 +227,7 @@
       }
     },
     "camp_topics": {
-      "name": "营火夜谈",
+      "name": "静谧夜话",
       "slots": {
         "topic": {
           "name": "夜聊话题",
@@ -244,7 +244,7 @@
       }
     },
     "souvenirs": {
-      "name": "纪念行囊",
+      "name": "纪念信物",
       "slots": {
         "name": {
           "name": "信物物件",
@@ -279,7 +279,7 @@
       }
     },
     "photos": {
-      "name": "旅途拍立得",
+      "name": "拍立得抓拍",
       "slots": {
         "scene": {
           "name": "镜头场景",

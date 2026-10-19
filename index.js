@@ -32,7 +32,65 @@
         outfit: {},
         camp: {},
         souvenirs: {},
-        photos: {}
+        photos: {},
+        dream: {}
+    };
+
+    /**
+     * 深度故事编写指南（提炼自原卡 UID 417~432 顶级文学规范）
+     * 发送动作时作为隐藏引导指令注入，使 AI 无需世界书也能产出高质量、有温度、有张力的小说级互动
+     */
+    const NARRATIVE_GUIDES = {
+        voyage: `【创作准则·漫游探索与感官落地】
+1. 严禁使用“景色如画、宏伟壮丽、宛如世外桃源”等空洞套话。必须具体描写光影色调来源、空气温湿度与脚底物理触感，营造极强现场空气感；
+2. 严禁廉价老套烂梗，所遇生灵与当地风土具备自洽的生活怪癖与交流方式；
+3. 剧情重心放在探索新奇与人情善意碰撞上，严禁强行插入无脑反派；
+4. 伴侣微动作与情感交织：每一次环境互动均需即时反馈到两人之间的眼神拉丝与肢体触碰（牵手、理顺发丝、分食），感情在天地间自然升温。双轨身份自适应（若伴侣为古老见证者，着重刻画漫长岁月后的释怀与深层宠溺；若为现世同行人，着重刻画平凡心动与相濡以沫）。`,
+
+        dungeon: `【创作准则·严肃探险与双人共鸣】
+1. 去网游化严肃文学探险：严禁输出装等、小怪血条或数值代码。描写必须充满沧桑宏大的古老质感与探险压迫感（古老回廊、微光以太、风化图腾）；
+2. 机关破解双人共鸣：解谜探寻需两人默契协力，将机关解开瞬间的轰鸣与光芒渲染出浓烈成就感；
+3. 终极殿堂的壮丽回响：终点应当展现震撼心灵的奇迹景观，两人并肩立于最高处，感叹沧海桑田与身旁有你。`,
+
+        cook: `【创作准则·烟火料理与投喂温存】
+1. 感官烹饪全景：细致描写食材处理、生火翻滚的水汽与色泽香气，营造浓厚的舌尖烟火气；
+2. 奇趣口感反差：描写初尝与回味的口感层次反差（如酸甜爆浆、微麻回甘），以及两人真实的生理表情反应；
+3. 喂食互动与私密烟火：伴侣展现鲜活生活气息（吹凉喂食、抢食拌嘴、细心擦拭嘴角），展现卸下防备后的纯粹爱意。`,
+
+        danger: `【创作准则·患难相依与庇护本能】
+1. 险情非绝境，重在心跳与相贴：严禁写成致死悲惨绝境，这是拉近距离的心跳小意外。在狭缝避险或突发困境中，重点描写两人紧紧相拥紧贴、急促心跳与温热呼吸交缠的情感张力；
+2. 伴侣的绝对庇护本能：伴侣必须爆发下意识的保护欲，以身挡险，脱险瞬间化为粗重喘息与用力的紧拥；
+3. 脱险后的温存与轻责：又心疼又后怕，带着微颤的语调轻声责怪或抚摸检查全身，感情急剧升温。`,
+
+        beast: `【创作准则·生灵憨态与伴侣反差】
+1. 灵动憨态与奇特生理：生动描写小生灵的毛茸触感、灵动形态与奇异习性（如爱钻口袋、嗜睡打呼、亲近人），极具萌态与生命力；
+2. 伴侣的傲娇与破防：嘴上嫌弃“哪来的野物”，身体却僵硬不敢乱动生怕惊醒它，甚至暗暗吃醋它对你过于亲近，展现可爱反差；
+3. 治愈相逢：两人温情照料，留下旅途中轻快美好的治愈切片。`,
+
+        outfit: `【创作准则·双人风尚与情侣穿搭】
+1. 衣物质感与细节呼应：细致描写面料材质、剪裁风格以及两人身上成对的情侣互搭点缀（成对搭扣、同色缎带、对戒或饰品）；
+2. 伴侣的打量与占有欲微反应：眼神层次丰富，嘴上挑剔评价款式招摇，目光却惊艳流连；下意识伸手替你系紧领口兜帽，占有欲暗生；
+3. 互相整理衣角，为踏上新旅程注入专属的仪式感。`,
+
+        camp: `【创作准则·午夜私密心境】
+1. 彻底剥离外界打扰、战斗与宏观话题。感官聚焦于昏暗微光、夜风雨声、毛毯体温以及两人缠绕的平稳呼吸；
+2. 心防剥离与深层低语：毫无防备的半睡小憩或依偎状态，轻声耳语；谈及过去时释怀轻叹与掌心相扣；
+3. 肢体接触极具温度（额头相抵、指尖穿过发丝、脸颊贴着肩窝），营造被深沉爱意完全包围的极致安宁。`,
+
+        dream: `【创作准则·星海溯洄与前世旧梦】
+1. 记忆切片生动展开：根据同行者身份回溯真实切片（回溯昔日胡闹实验、办公走廊午后、或初遇避难营地死斗与温存）；
+2. 梦醒瞬间的温存抚平：细致描写眼角泪光或笑意，身旁伴侣第一时间敏锐察觉，以轻柔动作拂去碎发、揽入怀中低语安抚：“都过去了，我现在就在你身边。”
+3. 今昔情愫交织，展现历经千帆后唯留身旁彼此的浓郁归宿感。`,
+
+        souvenirs: `【创作准则·围炉忆旧与信物寄情】
+1. 以物寄情：信物作为撬动深层记忆的情感开关，具体描写两人当时获取它的场景切片（当初的笨拙、惊险、打闹或心动）；
+2. 深夜炉火或灯下温存：伴侣表现出鲜活反应，失笑打趣当年的糗事，眼神变得极度柔软，吐露当时未曾说出口的真心话；
+3. 加深长相厮守的羁绊：落脚于当下两人相守的安宁。`,
+
+        photos: `【创作准则·旅人快门与偏爱定格】
+1. 快门前夕的生动拉扯：描写拍照前的准备与恶作剧拉扯；
+2. 闪光瞬间的失措真情：捕捉到伴侣眼神中瞬间融化的温柔、失措或本能宠溺保护的真实微表情，电影级光影特写；
+3. 底片显影与暗中珍藏：伴侣嘴上挑剔嫌弃“没拍好”，耳根微烫，趁人不备把底片悄悄放进贴胸衣袋妥善珍藏，或在白边写下私密批注。`
     };
 
     /**
@@ -44,6 +102,7 @@
             context.extensionSettings[EXTENSION_KEY] = {
                 enabled: true,
                 hideRawTag: true,
+                enableNarrativeGuide: true,
                 activePreset: 'eorzea',
                 customCategories: null
             };
@@ -281,15 +340,53 @@
         }
     }
 
-    function executeSend(actionPrompt) {
+    function executeSend(userSpeech, rawDirective, moduleKey) {
+        const settings = getSettings();
+        let payload = (userSpeech || '').trim();
+        
+        let hiddenDirectives = rawDirective ? rawDirective.trim() : '';
+        if (settings.enableNarrativeGuide && moduleKey && NARRATIVE_GUIDES[moduleKey]) {
+            hiddenDirectives += (hiddenDirectives ? '\n\n' : '') + NARRATIVE_GUIDES[moduleKey].trim();
+        }
+
+        if (hiddenDirectives) {
+            payload = `${payload}\n<div style="display:none">\n${hiddenDirectives}\n</div>`;
+        }
+
         const textarea = document.getElementById('send_textarea');
         if (textarea) {
-            textarea.value = actionPrompt;
+            textarea.value = payload;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            textarea.dispatchEvent(new Event('change', { bubbles: true }));
             const sendBtn = document.getElementById('send_but');
             if (sendBtn) sendBtn.click();
         }
         document.getElementById('cs-book-modal-wrapper')?.classList.add('cs-hidden');
+    }
+
+    /**
+     * 动态同步手记界面上的大类与子标签按钮标题
+     */
+    function updateModalTitles() {
+        if (!activeCategories) return;
+        const mapping = {
+            'cs-subtab-btn-voyage': 'voyage',
+            'cs-subtab-btn-dungeon': 'dungeon',
+            'cs-subtab-btn-treasure': 'treasure',
+            'cs-subtab-btn-cook': 'cook',
+            'cs-subtab-btn-danger': 'danger',
+            'cs-subtab-btn-beast': 'beast',
+            'cs-subtab-btn-camp': 'camp_topics',
+            'cs-subtab-btn-souvenirs': 'souvenirs',
+            'cs-subtab-btn-photos': 'photos'
+        };
+
+        for (const [elemId, catKey] of Object.entries(mapping)) {
+            const el = document.getElementById(elemId);
+            if (el && activeCategories[catKey]?.name) {
+                el.textContent = activeCategories[catKey].name;
+            }
+        }
     }
 
     /**
@@ -307,6 +404,7 @@
 
         document.getElementById('cs-global-toggle-btn')?.addEventListener('click', () => {
             document.getElementById('cs-book-modal-wrapper')?.classList.toggle('cs-hidden');
+            updateModalTitles();
         });
 
         document.getElementById('cs-close-book')?.addEventListener('click', () => {
@@ -353,13 +451,14 @@
         bindSubtabs('cs-post-subtabs', 'cs-pane-');
 
         bindGameplayMatrixActions();
+        updateModalTitles();
     }
 
     /**
      * 绑定各玩法多维随机抽取动作 (排列组合)
      */
     function bindGameplayMatrixActions() {
-        // 未知漫游
+        // 未知漫游 / 街区漫步
         document.getElementById('cs-btn-roll-voyage')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('voyage');
             if (!roll) return;
@@ -372,11 +471,13 @@
         document.getElementById('cs-btn-depart-voyage')?.addEventListener('click', () => {
             const roll = currentRolls.voyage.biome ? currentRolls.voyage : rollCategoryMatrix('voyage');
             if (roll && roll.biome) {
-                executeSend(`让我们启程前往【${roll.biome}】吧。`);
+                const speech = `让我们启程前往【${roll.biome}】吧。`;
+                const raw = `[纪行手记·漫游探索]：\n- 目标地界：【${roll.biome}】\n- 遇逢群体：【${roll.race}】\n- 当地事态：【${roll.custom}】\n- 旅伴相处：【${roll.bond}】`;
+                executeSend(speech, raw, 'voyage');
             }
         });
 
-        // 秘境迷宫
+        // 秘境迷宫 / 特色探店
         document.getElementById('cs-btn-roll-dungeon')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('dungeon');
             if (!roll) return;
@@ -386,10 +487,14 @@
         });
         document.getElementById('cs-btn-send-dungeon')?.addEventListener('click', () => {
             const roll = currentRolls.dungeon.name ? currentRolls.dungeon : rollCategoryMatrix('dungeon');
-            if (roll && roll.name) executeSend(`深入探索${roll.name}。`);
+            if (roll && roll.name) {
+                const speech = `深入探索${roll.name}。`;
+                const raw = `[纪行手记·探秘探险]：\n- 探索区域：${roll.name}\n- 机关阻碍：${roll.trap}\n- 终局相守：${roll.reward}`;
+                executeSend(speech, raw, 'dungeon');
+            }
         });
 
-        // 荒野野炊
+        // 荒野野炊 / 深夜食堂
         document.getElementById('cs-btn-roll-cook')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('cook');
             if (!roll) return;
@@ -399,10 +504,14 @@
         });
         document.getElementById('cs-btn-send-cook')?.addEventListener('click', () => {
             const roll = currentRolls.cook.dish ? currentRolls.cook : rollCategoryMatrix('cook');
-            if (roll && roll.dish) executeSend(`动手支锅，尝尝新烹制的${roll.dish}。`);
+            if (roll && roll.dish) {
+                const speech = `动手支锅，尝尝新烹制的${roll.dish}。`;
+                const raw = `[纪行手记·美食品尝]：\n- 美馔佳肴：${roll.dish}\n- 诱人口感：${roll.taste}\n- 围炉相伴：${roll.bond}`;
+                executeSend(speech, raw, 'cook');
+            }
         });
 
-        // 突发险情
+        // 突发险情 / 意外插曲
         document.getElementById('cs-btn-roll-danger')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('danger');
             if (!roll) return;
@@ -412,10 +521,14 @@
         });
         document.getElementById('cs-btn-send-danger')?.addEventListener('click', () => {
             const roll = currentRolls.danger.event ? currentRolls.danger : rollCategoryMatrix('danger');
-            if (roll && roll.event) executeSend(`面对突发异变${roll.event}，我们相依突围。`);
+            if (roll && roll.event) {
+                const speech = `面对突发异变${roll.event}，我们相依突围。`;
+                const raw = `[纪行手记·突发意外]：\n- 突发事态：${roll.event}\n- 贴身困境：${roll.pinch}\n- 恋人庇护：${roll.reaction}`;
+                executeSend(speech, raw, 'danger');
+            }
         });
 
-        // 奇珍萌物
+        // 奇珍萌物 / 街角萌宠
         document.getElementById('cs-btn-roll-beast')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('beast');
             if (!roll) return;
@@ -425,17 +538,37 @@
         });
         document.getElementById('cs-btn-send-beast')?.addEventListener('click', () => {
             const roll = currentRolls.beast.name ? currentRolls.beast : rollCategoryMatrix('beast');
-            if (roll && roll.name) executeSend(`记录奇珍【${roll.name}】入图鉴。`);
+            if (roll && roll.name) {
+                const speech = `记录萌宠【${roll.name}】入图鉴。`;
+                const raw = `[纪行手记·奇珍萌宠]：\n- 生灵形态：${roll.name}\n- 灵动习性：${roll.habit}\n- 恋人破防：${roll.bond}`;
+                executeSend(speech, raw, 'beast');
+            }
         });
 
-        // 营火夜谈
+        // 营火夜谈 / 静谧夜话
         document.getElementById('cs-btn-start-camp')?.addEventListener('click', () => {
             const select = document.getElementById('cs-camp-topic-select');
             const topic = select ? select.value : '深夜私语';
-            executeSend(`在夜色中，聊聊关于${topic}的心里话。`);
+            const speech = `在夜色中，聊聊关于${topic}的心里话。`;
+            const raw = `[纪行手记·深夜夜话]：\n- 今夜话题：${topic}\n- 氛围契机：夜幕低垂，四野静谧，仅有彼此的体温与微光。`;
+            executeSend(speech, raw, 'camp');
         });
 
-        // 纪念行囊
+        // 星海旧梦
+        document.getElementById('cs-btn-roll-dream')?.addEventListener('click', () => {
+            const roll = rollCategoryMatrix('dream') || { scene: '昔日并肩历经的风雨，如在眼前。', awake: '恋人抬手拭去你发梢夜露：“都过去了，我现在就在你身边。”' };
+            document.getElementById('cs-dream-scene').textContent = roll.scene;
+            document.getElementById('cs-dream-awake').textContent = roll.awake;
+        });
+        document.getElementById('cs-btn-send-dream')?.addEventListener('click', () => {
+            const scene = document.getElementById('cs-dream-scene')?.textContent || '';
+            const awake = document.getElementById('cs-dream-awake')?.textContent || '';
+            const speech = `从旧日梦境中醒来，揉了揉发酸的眼角：“……我又梦见那时候的事情了。”`;
+            const raw = `[纪行手记·星海旧梦]：\n- 昔年切片：${scene}\n- 醒后抚慰：${awake}`;
+            executeSend(speech, raw, 'dream');
+        });
+
+        // 纪念行囊 / 纪念信物
         document.getElementById('cs-btn-roll-bag')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('souvenirs');
             if (!roll) return;
@@ -445,7 +578,11 @@
         });
         document.getElementById('cs-btn-send-bag')?.addEventListener('click', () => {
             const roll = currentRolls.souvenirs.name ? currentRolls.souvenirs : rollCategoryMatrix('souvenirs');
-            if (roll && roll.name) executeSend(`从行囊里翻出${roll.name}，聊聊旧事。`);
+            if (roll && roll.name) {
+                const speech = `从行囊里翻出${roll.name}，聊聊旧事。`;
+                const raw = `[纪行手记·睹物旧忆]：\n- 风物信物：${roll.name}（${roll.desc}）\n- 背后记忆：${roll.mem}`;
+                executeSend(speech, raw, 'souvenirs');
+            }
         });
 
         // 拍立得
@@ -458,10 +595,14 @@
         });
         document.getElementById('cs-btn-send-photo')?.addEventListener('click', () => {
             const roll = currentRolls.photos.scene ? currentRolls.photos : rollCategoryMatrix('photos');
-            if (roll && roll.scene) executeSend(`按动快门，定格这一瞬的记忆。`);
+            if (roll && roll.scene) {
+                const speech = `按动快门，定格这一瞬的记忆。`;
+                const raw = `[纪行手记·旅途拍立得]：\n- 镜头场景：${roll.scene}（${roll.meta}）\n- 伴侣手记批注：${roll.caption}`;
+                executeSend(speech, raw, 'photos');
+            }
         });
 
-        // 双人风尚衣箱
+        // 双人风尚衣箱 / 情侣穿搭
         document.getElementById('cs-btn-roll-outfit')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('outfit');
             if (!roll) return;
@@ -471,7 +612,11 @@
         });
         document.getElementById('cs-btn-send-outfit')?.addEventListener('click', () => {
             const roll = currentRolls.outfit.style ? currentRolls.outfit : rollCategoryMatrix('outfit');
-            if (roll && roll.style) executeSend(`换上${roll.style}一同出发。`);
+            if (roll && roll.style) {
+                const speech = `换上${roll.style}一同出发。`;
+                const raw = `[纪行手记·双人换装]：\n- 穿搭风格：${roll.style}（${roll.desc}）\n- 伴侣神态与小动作：${roll.react}`;
+                executeSend(speech, raw, 'outfit');
+            }
         });
 
         refreshCampTopics();
@@ -482,6 +627,27 @@
         if (!select || !activeCategories?.camp_topics?.slots?.topic) return;
         const list = activeCategories.camp_topics.slots.topic.items || [];
         select.innerHTML = list.map(t => `<option value="${t}">${t}</option>`).join('');
+    }
+
+    function updateCategorySelectOptions() {
+        const select = document.getElementById('cs-category-select');
+        if (!select || !activeCategories) return;
+        const iconMap = {
+            voyage: '🧭',
+            dungeon: '🏛️',
+            cook: '🍳',
+            danger: '⚡',
+            beast: '🐾',
+            outfit: '👗',
+            camp_topics: '⛺',
+            souvenirs: '📦',
+            photos: '📷'
+        };
+        select.innerHTML = Object.entries(activeCategories).map(([key, cat]) => {
+            const icon = iconMap[key] || '📜';
+            return `<option value="${key}">${icon} ${cat.name || key}</option>`;
+        }).join('');
+        select.value = currentCategory;
     }
 
     /**
@@ -518,6 +684,44 @@
             });
         }
 
+        const guideToggle = document.getElementById('cs-narrative-guide-toggle');
+        if (guideToggle) {
+            guideToggle.checked = settings.enableNarrativeGuide !== false;
+            guideToggle.addEventListener('change', () => {
+                settings.enableNarrativeGuide = guideToggle.checked;
+                saveSettings();
+            });
+        }
+
+        // 大类标题实时修改与同步
+        const catNameInput = document.getElementById('cs-category-name-input');
+        const syncCatNameInput = () => {
+            if (catNameInput && activeCategories?.[currentCategory]) {
+                catNameInput.value = activeCategories[currentCategory].name || '';
+            }
+        };
+        syncCatNameInput();
+
+        document.getElementById('cs-rename-category-btn')?.addEventListener('click', () => {
+            const newName = catNameInput?.value?.trim();
+            if (!newName) return;
+            if (activeCategories?.[currentCategory]) {
+                activeCategories[currentCategory].name = newName;
+                autoUpgradeToCustom();
+                saveSettings();
+                updateCategorySelectOptions();
+                updateModalTitles();
+                renderSlotBar();
+                renderPills();
+                toastr.success(`大类标题已更新为：“${newName}”`);
+            }
+        });
+        catNameInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('cs-rename-category-btn')?.click();
+            }
+        });
+
         // 预设切换
         const presetSelect = document.getElementById('cs-active-preset-select');
         if (presetSelect) {
@@ -526,24 +730,29 @@
                 settings.activePreset = presetSelect.value;
                 resolveActivePool();
                 saveSettings();
+                updateCategorySelectOptions();
+                syncCatNameInput();
+                updateModalTitles();
                 renderSlotBar();
                 renderPills();
                 refreshCampTopics();
             });
         }
 
-        // 一级大类选择
-        document.querySelectorAll('#cs-category-tabs .cs-tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('#cs-category-tabs .cs-tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentCategory = btn.getAttribute('data-cat');
+        // 一级大类下拉选择
+        const categorySelect = document.getElementById('cs-category-select');
+        updateCategorySelectOptions();
+        if (categorySelect) {
+            categorySelect.addEventListener('change', () => {
+                currentCategory = categorySelect.value;
+                syncCatNameInput();
                 const slots = activeCategories[currentCategory]?.slots || {};
                 currentSlot = Object.keys(slots)[0] || '';
                 renderSlotBar();
                 renderPills();
             });
-        });
+        }
+
 
         // 导出词库
         document.getElementById('cs-export-pool-btn')?.addEventListener('click', () => {
@@ -603,6 +812,8 @@
             if (e.key === 'Enter') submitAddWord();
         });
 
+        const catSelInit = document.getElementById('cs-category-select');
+        if (catSelInit) catSelInit.value = currentCategory;
         renderSlotBar();
         renderPills();
     }

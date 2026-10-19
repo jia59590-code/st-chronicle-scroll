@@ -222,28 +222,30 @@
 .cs-btn.primary { background: var(--cs-gold); color: #fff; }
 
 /* ========================================================
-   3. 词库设置面板（原生稳健折叠与抽屉适配）
+   3. 词库设置面板（原生酒馆抽屉自适应无截断设计）
    ======================================================== */
 .cs-settings-details {
-    margin: 8px 0;
-    border: 1px solid rgba(179, 135, 40, 0.3);
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.12);
-    overflow: hidden;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 6px 0 !important;
+    border: 1px solid rgba(179, 135, 40, 0.35) !important;
+    border-radius: 6px !important;
+    background: rgba(20, 24, 34, 0.85) !important;
+    overflow: visible !important;
 }
 .cs-settings-summary {
     display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    background: rgba(179, 135, 40, 0.12);
-    cursor: pointer;
-    user-select: none;
-    font-size: 13.5px;
-    font-weight: 700;
-    color: var(--cs-gold);
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 12px !important;
+    background: rgba(179, 135, 40, 0.18) !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: var(--cs-gold) !important;
     list-style: none !important;
-    outline: none;
+    outline: none !important;
 }
 .cs-settings-summary::-webkit-details-marker {
     display: none !important;
@@ -251,29 +253,37 @@
 .cs-summary-arrow {
     font-size: 11px;
     transition: transform 0.25s ease;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 .cs-settings-details[open] .cs-summary-arrow {
     transform: rotate(180deg);
 }
+
 .cs-drawer-inner {
-    padding: 12px 14px;
-    animation: csDrawerFadeIn 0.25s ease;
-}
-@keyframes csDrawerFadeIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
+    padding: 10px 8px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
 }
 
-.cs-setting-group {
-    padding: 4px 0;
+/* 分块卡片 */
+.cs-card-section {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(179, 135, 40, 0.2);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
 }
+
 .cs-toggle-row {
     display: flex; justify-content: space-between; align-items: center;
 }
-.cs-toggle-label { font-size: 13px; font-weight: 600; }
+.cs-toggle-label { font-size: 12.5px; font-weight: 600; color: #dfdfe6; }
 .cs-hint-text {
-    font-size: 11px; opacity: 0.65; margin: 3px 0 0 0; line-height: 1.4;
+    font-size: 11px; opacity: 0.65; margin: 3px 0 0 0; line-height: 1.4; color: #bbb;
+}
+.cs-label-row {
+    margin-bottom: 5px;
 }
 
 /* 开关 Switch */
@@ -292,79 +302,148 @@
 .cs-switch input:checked + .cs-slider { background-color: var(--cs-gold); }
 .cs-switch input:checked + .cs-slider:before { transform: translateX(17px); }
 
-/* 一级大类 Tab */
-.cs-tabs-header {
-    display: flex; gap: 4px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 8px;
-}
-.cs-tab-btn {
-    padding: 4px 10px; font-size: 12px; border-radius: 4px; cursor: pointer;
-    background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(179, 135, 40, 0.25);
-    color: inherit; white-space: nowrap; transition: all 0.2s;
-}
-.cs-tab-btn:hover { background: rgba(179, 135, 40, 0.15); }
-.cs-tab-btn.active {
-    background: var(--cs-gold); color: #fff; border-color: var(--cs-gold); font-weight: 600;
+/* 全宽下拉选择器 */
+.cs-full-select {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    height: 32px !important;
+    padding: 4px 8px !important;
+    font-size: 12.5px !important;
+    border-radius: 4px !important;
+    margin-bottom: 8px !important;
+    background: rgba(0, 0, 0, 0.35) !important;
+    color: #dfdfe6 !important;
+    border: 1px solid rgba(179, 135, 40, 0.4) !important;
 }
 
-/* 二级小类（槽位 Slot）选择栏 */
+/* 操作按钮等分三列网格（彻底解决被挤成竖排字问题） */
+.cs-action-btn-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+.cs-action-btn-grid .menu_button {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 5px 0 !important;
+    text-align: center !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+}
+
+/* 二级槽位按钮栏 */
 .cs-slot-bar {
-    display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px;
-    padding: 6px 8px; background: rgba(0, 0, 0, 0.15); border-radius: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
 }
 .cs-slot-btn {
-    padding: 3px 9px; font-size: 11.5px; border-radius: 3px; cursor: pointer;
-    background: transparent; border: 1px solid rgba(255, 255, 255, 0.15);
-    color: inherit; transition: all 0.2s;
-}
-.cs-slot-btn:hover { border-color: var(--cs-gold); }
-.cs-slot-btn.active {
-    background: rgba(179, 135, 40, 0.25); border-color: var(--cs-gold);
-    color: var(--cs-gold); font-weight: 700;
-}
-
-/* 词条管理区与独立气泡胶囊 */
-.cs-words-box {
-    background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(179, 135, 40, 0.2);
-    border-radius: 6px; padding: 10px 12px;
-}
-.cs-words-header {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.cs-slot-title { font-size: 12px; font-weight: 700; color: var(--cs-gold); }
-.cs-badge { font-size: 11px; opacity: 0.65; }
-
-/* 词条胶囊池 (Tag Pills) */
-.cs-pills-container {
-    display: flex; flex-wrap: wrap; gap: 6px; max-height: 220px;
-    overflow-y: auto; padding: 4px 2px; margin-bottom: 10px;
-}
-.cs-word-pill {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 10px; border-radius: 14px;
-    background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(179, 135, 40, 0.35);
-    font-size: 12px; line-height: 1.4; color: inherit;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(179, 135, 40, 0.3);
+    color: #dfdfe6;
     transition: all 0.2s;
 }
+.cs-slot-btn:hover {
+    border-color: var(--cs-gold);
+    background: rgba(179, 135, 40, 0.2);
+}
+.cs-slot-btn.active {
+    background: var(--cs-gold);
+    color: #111;
+    font-weight: 700;
+    border-color: var(--cs-gold);
+}
+
+/* 词条管理部分与气泡 */
+.cs-words-section {
+    padding-bottom: 12px !important;
+}
+.cs-words-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.cs-slot-title { font-size: 12px; font-weight: 700; color: var(--cs-gold); }
+.cs-badge { font-size: 11px; opacity: 0.65; color: #aaa; }
+
+/* 词条胶囊容器（自适应展开与内嵌滚动条） */
+.cs-pills-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    min-height: 80px !important;
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    padding: 6px 4px !important;
+    margin-bottom: 10px !important;
+    border: 1px solid rgba(179, 135, 40, 0.25) !important;
+    border-radius: 4px !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    box-sizing: border-box !important;
+}
+
+/* 每一个词条做成一条清晰的横向小卡片，支持长句完整阅读并带右侧小红叉 */
+.cs-word-pill {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 6px 10px !important;
+    border-radius: 4px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(179, 135, 40, 0.3) !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    color: #dfdfe6 !important;
+    word-break: break-all !important;
+    transition: background 0.2s, border-color 0.2s !important;
+}
 .cs-word-pill:hover {
-    background: rgba(255, 255, 255, 0.12); border-color: var(--cs-gold);
+    background: rgba(255, 255, 255, 0.09) !important;
+    border-color: var(--cs-gold) !important;
 }
 .cs-pill-del {
-    color: #e74c3c; cursor: pointer; font-size: 14px; font-weight: bold;
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 14px; height: 14px; border-radius: 50%; transition: background 0.2s;
+    flex-shrink: 0 !important;
+    color: #e74c3c !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    padding: 0 4px !important;
+    border-radius: 3px !important;
+    transition: background 0.2s !important;
 }
 .cs-pill-del:hover {
-    background: #e74c3c; color: #fff;
+    background: #e74c3c !important;
+    color: #fff !important;
 }
 
 /* 快速添加栏 */
 .cs-inline-add-bar {
-    display: flex; gap: 6px; align-items: center;
+    display: flex !important;
+    gap: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 .cs-inline-add-bar input {
-    height: 30px; font-size: 12px;
+    height: 32px !important;
+    font-size: 12px !important;
+    flex: 1 !important;
+    box-sizing: border-box !important;
 }
 .cs-inline-add-bar button {
-    height: 30px; padding: 0 14px; font-size: 12px; white-space: nowrap;
+    height: 32px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
 }
