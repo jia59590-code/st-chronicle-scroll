@@ -5,8 +5,8 @@
  * 功能：
  * 1. 自动下发格式指令（setExtensionPrompt 动态注入，无需配置世界书）
  * 2. 自动拦截解析大模型回复，更新手记界面并洁净正文楼层
- * 3. 7大奇遇罗盘与营火旧梦交互玩法
- * 4. 艾欧泽亚 (FF14) 与 现代都市 双词库零代码可视化增删与管理
+ * 3. 多维独立随机矩阵（地界/生灵/事态/心绪各自独立抽取，万种组合）
+ * 4. 设置面板原生折叠、二级槽位切换与词条气泡无代码增删
  */
 
 (function () {
@@ -17,22 +17,22 @@
     let poolEorzea = null;
     let poolModern = null;
 
-    // 当前运行时词库引用
-    let activePoolData = null;
+    // 当前生效词库分类集合引用
+    let activeCategories = null;
     let currentCategory = 'voyage';
+    let currentSlot = 'biome';
 
-    // 当前抽取的临时暂存状态
+    // 当前抽取的临时组合状态
     let currentRolls = {
-        voyage: null,
-        dungeon: null,
-        treasure: null,
-        cook: null,
-        danger: null,
-        beast: null,
-        outfit: null,
-        dream: null,
-        souvenir: null,
-        photo: null
+        voyage: {},
+        dungeon: {},
+        cook: {},
+        danger: {},
+        beast: {},
+        outfit: {},
+        camp: {},
+        souvenirs: {},
+        photos: {}
     };
 
     /**
@@ -45,7 +45,7 @@
                 enabled: true,
                 hideRawTag: true,
                 activePreset: 'eorzea',
-                customPool: null
+                customCategories: null
             };
         }
         return context.extensionSettings[EXTENSION_KEY];
@@ -58,7 +58,6 @@
 
     /**
      * 1. 动态提示词注入 (Prompt Injection)
-     * 在酒馆组装好 payload 准备发往 AI 前注入指令
      */
     function updateExtensionPrompt() {
         const settings = getSettings();
@@ -80,12 +79,11 @@
 </fantasy_scroll>
 `.trim();
 
-        // position: 1 (User/System尾部), depth: 0
         SillyTavern.getContext().setExtensionPrompt(EXTENSION_NAME, promptText, 1, 0, false);
     }
 
     /**
-     * 加载内置词库文件
+     * 加载内置多维矩阵词库
      */
     async function loadBuiltinPools() {
         try {
@@ -97,36 +95,61 @@
             poolEorzea = await respE.json();
             poolModern = await respM.json();
         } catch (err) {
-            console.warn('[ChronicleScroll] 加载远程词库失败，启用内存兜底词库:', err);
-            // 兜底极简词库
-            poolEorzea = { id: 'eorzea', name: '艾欧泽亚传奇', pools: { voyage: [], camp_topics: [] } };
-            poolModern = { id: 'modern', name: '都市漫游录', pools: { voyage: [], camp_topics: [] } };
+            console.warn('[ChronicleScroll] 加载远程词库失败，启用本地兜底:', err);
+            poolEorzea = { id: 'eorzea', name: '艾欧泽亚传奇', categories: {} };
+            poolModern = { id: 'modern', name: '都市漫游录', categories: {} };
         }
         resolveActivePool();
     }
 
     /**
-     * 解析当前生效词库
+     * 解析当前生效词库分类
      */
     function resolveActivePool() {
         const settings = getSettings();
         if (settings.activePreset === 'modern') {
-            activePoolData = poolModern?.pools || {};
-        } else if (settings.activePreset === 'custom' && settings.customPool) {
-            activePoolData = settings.customPool.pools || {};
+            activeCategories = poolModern?.categories || {};
+        } else if (settings.activePreset === 'custom' && settings.customCategories) {
+            activeCategories = settings.customCategories;
         } else {
-            activePoolData = poolEorzea?.pools || {};
+            activeCategories = poolEorzea?.categories || {};
+        }
+
+        // 纠正当前大类与小类指向
+        if (!activeCategories[currentCategory]) {
+            currentCategory = Object.keys(activeCategories)[0] || 'voyage';
+        }
+        const slots = activeCategories[currentCategory]?.slots || {};
+        if (!slots[currentSlot]) {
+            currentSlot = Object.keys(slots)[0] || '';
         }
     }
 
     /**
-     * 2. 数据拦截与手记内容解析
+     * 2. 多维独立随机抽取算法 (核心：自由排列组合)
+     */
+    function getRandom(arr) {
+        if (!Array.isArray(arr) || arr.length === 0) return '';
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function rollCategoryMatrix(catKey) {
+        if (!activeCategories || !activeCategories[catKey] || !activeCategories[catKey].slots) return null;
+        const slots = activeCategories[catKey].slots;
+        const result = {};
+        for (const [slotKey, slotObj] of Object.entries(slots)) {
+            result[slotKey] = getRandom(slotObj.items);
+        }
+        currentRolls[catKey] = result;
+        return result;
+    }
+
+    /**
+     * 3. 数据拦截与手记内容解析
      */
     function parseScrollData(rawPayload) {
         if (!rawPayload) return;
-        const result = {
-            env: {}, user: {}, lover: {}, quest: {}, party: [], world: []
-        };
+        const result = { env: {}, user: {}, lover: {}, quest: {}, party: [], world: [] };
 
         const envMatch = rawPayload.match(/\[Env\|([\s\S]*?)\]/i);
         if (envMatch) {
@@ -183,9 +206,6 @@
         renderScrollToModal(result);
     }
 
-    /**
-     * 将解析出的数据填入手记面板
-     */
     function renderScrollToModal(data) {
         const setVal = (id, val) => {
             const el = document.getElementById(id);
@@ -216,7 +236,6 @@
             setVal('cs-lover-deep', data.lover['深层隐微']);
         }
 
-        // 渲染队伍
         const partyContainer = document.getElementById('cs-party-list-container');
         if (partyContainer && data.party.length > 0) {
             partyContainer.innerHTML = data.party.map(p => `
@@ -227,7 +246,6 @@
             `).join('');
         }
 
-        // 渲染传闻
         const worldContainer = document.getElementById('cs-world-list-container');
         if (worldContainer && data.world.length > 0) {
             worldContainer.innerHTML = data.world.map(w => `
@@ -239,66 +257,43 @@
         }
     }
 
-    /**
-     * 3. 消息渲染事件监听与正文洁净
-     */
     function onCharacterMessageRendered(messageId) {
         const context = SillyTavern.getContext();
         const chat = context.chat;
         const msg = chat[messageId];
         if (!msg || !msg.mes) return;
 
-        // 匹配 <fantasy_scroll> 或 <adventure_scroll>
         const regex = /<(?:fantasy_scroll|adventure_scroll)>([\s\S]*?)<\/(?:fantasy_scroll|adventure_scroll)>/i;
         const match = msg.mes.match(regex);
         if (match) {
             parseScrollData(match[1]);
 
-            // 如果开启楼层洁净，隐藏正文中的标签代码
             const settings = getSettings();
             if (settings.hideRawTag) {
                 const messageDom = document.querySelector(`.mes[mesid="${messageId}"] .mes_text`);
                 if (messageDom) {
                     messageDom.innerHTML = messageDom.innerHTML.replace(
                         /<(?:fantasy_scroll|adventure_scroll)>[\s\S]*?<\/(?:fantasy_scroll|adventure_scroll)>/gi,
-                        '<div class="cs-badge-pill" style="margin-top:8px;padding:3px 10px;display:inline-block;border-radius:12px;background:rgba(179,135,40,0.15);font-size:11px;color:#a67c1e;">[已记录入手记]</div>'
+                        '<div class="cs-badge-pill" style="margin-top:6px;padding:2px 8px;display:inline-block;border-radius:10px;background:rgba(179,135,40,0.15);font-size:11px;color:#a67c1e;">[已记录入手记]</div>'
                     );
                 }
             }
         }
     }
 
-    /**
-     * 4. 玩法轮盘随机与发送动作
-     */
-    function getRandomItem(arr) {
-        if (!Array.isArray(arr) || arr.length === 0) return null;
-        return arr[Math.floor(Math.random() * arr.length)];
-    }
-
-    function rollCategory(cat) {
-        if (!activePoolData || !activePoolData[cat]) return;
-        const pool = activePoolData[cat];
-        const item = getRandomItem(pool);
-        currentRolls[cat] = item;
-        return item;
-    }
-
-    function executeSend(actionPrompt, directSay) {
-        const text = directSay || actionPrompt;
+    function executeSend(actionPrompt) {
         const textarea = document.getElementById('send_textarea');
         if (textarea) {
-            textarea.value = text;
+            textarea.value = actionPrompt;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
             const sendBtn = document.getElementById('send_but');
             if (sendBtn) sendBtn.click();
         }
-        // 关闭手记弹窗
         document.getElementById('cs-book-modal-wrapper')?.classList.add('cs-hidden');
     }
 
     /**
-     * 5. 挂载手记模态框到主窗口
+     * 4. 挂载手记模态框到主窗口
      */
     async function mountModal() {
         if (document.getElementById('cs-global-toggle-btn')) return;
@@ -310,10 +305,8 @@
         container.innerHTML = modalHtml;
         document.body.appendChild(container);
 
-        // 绑定悬浮开书按钮
         document.getElementById('cs-global-toggle-btn')?.addEventListener('click', () => {
-            const modal = document.getElementById('cs-book-modal-wrapper');
-            modal.classList.toggle('cs-hidden');
+            document.getElementById('cs-book-modal-wrapper')?.classList.toggle('cs-hidden');
         });
 
         document.getElementById('cs-close-book')?.addEventListener('click', () => {
@@ -324,14 +317,12 @@
             document.getElementById('cs-book-modal-wrapper')?.classList.add('cs-hidden');
         });
 
-        // 视界主题切换
         document.getElementById('cs-theme-toggle')?.addEventListener('click', () => {
             const book = document.getElementById('cs-main-book');
             book.classList.toggle('cs-theme-classic');
             book.classList.toggle('cs-theme-dark');
         });
 
-        // 7 大书签切换
         document.querySelectorAll('#cs-nav-bookmarks .cs-bookmark').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('#cs-nav-bookmarks .cs-bookmark').forEach(b => b.classList.remove('active'));
@@ -342,12 +333,10 @@
             });
         });
 
-        // 翻转卡片
         document.getElementById('cs-lover-flip-card')?.addEventListener('click', function () {
             this.classList.toggle('flipped');
         });
 
-        // 子标签切换通用逻辑
         const bindSubtabs = (containerId, panePrefix) => {
             document.querySelectorAll(`#${containerId} .cs-subtab-btn`).forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -363,145 +352,158 @@
         bindSubtabs('cs-camp-subtabs', 'cs-pane-');
         bindSubtabs('cs-post-subtabs', 'cs-pane-');
 
-        // 绑定各玩法抽取与发送事件
-        bindGameplayActions();
+        bindGameplayMatrixActions();
     }
 
-    function bindGameplayActions() {
+    /**
+     * 绑定各玩法多维随机抽取动作 (排列组合)
+     */
+    function bindGameplayMatrixActions() {
         // 未知漫游
         document.getElementById('cs-btn-roll-voyage')?.addEventListener('click', () => {
-            const item = rollCategory('voyage');
-            if (!item) return;
-            document.getElementById('cs-v-biome').textContent = item.biome;
-            document.getElementById('cs-v-sense').textContent = item.sense;
-            document.getElementById('cs-v-race').textContent = item.race;
-            document.getElementById('cs-v-traits').textContent = item.traits;
-            document.getElementById('cs-v-custom').textContent = item.custom;
-            document.getElementById('cs-v-incident').textContent = item.incident;
-            document.getElementById('cs-v-bond').textContent = item.bond;
+            const roll = rollCategoryMatrix('voyage');
+            if (!roll) return;
+            document.getElementById('cs-v-biome').textContent = roll.biome;
+            document.getElementById('cs-v-race').textContent = roll.race;
+            document.getElementById('cs-v-custom').textContent = roll.custom;
+            document.getElementById('cs-v-bond').textContent = roll.bond;
         });
 
         document.getElementById('cs-btn-depart-voyage')?.addEventListener('click', () => {
-            const item = currentRolls.voyage || rollCategory('voyage');
-            if (!item) return;
-            executeSend(`让我们启程前往【${item.biome}】吧。`);
+            const roll = currentRolls.voyage.biome ? currentRolls.voyage : rollCategoryMatrix('voyage');
+            if (roll && roll.biome) {
+                executeSend(`让我们启程前往【${roll.biome}】吧。`);
+            }
         });
 
         // 秘境迷宫
         document.getElementById('cs-btn-roll-dungeon')?.addEventListener('click', () => {
-            const item = rollCategory('dungeon');
-            if (!item) return;
-            document.getElementById('cs-dg-name').textContent = item.name;
-            document.getElementById('cs-dg-desc').textContent = item.desc;
-            document.getElementById('cs-dg-trap').textContent = item.trap;
-            document.getElementById('cs-dg-reward').textContent = item.reward;
+            const roll = rollCategoryMatrix('dungeon');
+            if (!roll) return;
+            document.getElementById('cs-dg-name').textContent = roll.name;
+            document.getElementById('cs-dg-trap').textContent = roll.trap;
+            document.getElementById('cs-dg-reward').textContent = roll.reward;
         });
         document.getElementById('cs-btn-send-dungeon')?.addEventListener('click', () => {
-            const item = currentRolls.dungeon || rollCategory('dungeon');
-            if (item) executeSend(`深入探索${item.name}。`);
-        });
-
-        // 寻宝探秘
-        document.getElementById('cs-btn-roll-treasure')?.addEventListener('click', () => {
-            const item = rollCategory('treasure');
-            if (!item) return;
-            document.getElementById('cs-tr-map').textContent = item.map;
-            document.getElementById('cs-tr-riddle').textContent = item.riddle;
-            document.getElementById('cs-tr-loot').textContent = item.loot;
-        });
-        document.getElementById('cs-btn-send-treasure')?.addEventListener('click', () => {
-            const item = currentRolls.treasure || rollCategory('treasure');
-            if (item) executeSend(`跟随${item.map}的线索寻宝。`);
+            const roll = currentRolls.dungeon.name ? currentRolls.dungeon : rollCategoryMatrix('dungeon');
+            if (roll && roll.name) executeSend(`深入探索${roll.name}。`);
         });
 
         // 荒野野炊
         document.getElementById('cs-btn-roll-cook')?.addEventListener('click', () => {
-            const item = rollCategory('cook');
-            if (!item) return;
-            document.getElementById('cs-ck-name').textContent = item.name;
-            document.getElementById('cs-ck-taste').textContent = item.taste;
-            document.getElementById('cs-ck-bond').textContent = item.bond;
+            const roll = rollCategoryMatrix('cook');
+            if (!roll) return;
+            document.getElementById('cs-ck-name').textContent = roll.dish;
+            document.getElementById('cs-ck-taste').textContent = roll.taste;
+            document.getElementById('cs-ck-bond').textContent = roll.bond;
         });
         document.getElementById('cs-btn-send-cook')?.addEventListener('click', () => {
-            const item = currentRolls.cook || rollCategory('cook');
-            if (item) executeSend(`动手支锅，尝尝新烹制的${item.name}。`);
+            const roll = currentRolls.cook.dish ? currentRolls.cook : rollCategoryMatrix('cook');
+            if (roll && roll.dish) executeSend(`动手支锅，尝尝新烹制的${roll.dish}。`);
         });
 
         // 突发险情
         document.getElementById('cs-btn-roll-danger')?.addEventListener('click', () => {
-            const item = rollCategory('danger');
-            if (!item) return;
-            document.getElementById('cs-dg-event').textContent = item.event;
-            document.getElementById('cs-dg-pinch').textContent = item.pinch;
-            document.getElementById('cs-dg-reaction').textContent = item.reaction;
+            const roll = rollCategoryMatrix('danger');
+            if (!roll) return;
+            document.getElementById('cs-dg-event').textContent = roll.event;
+            document.getElementById('cs-dg-pinch').textContent = roll.pinch;
+            document.getElementById('cs-dg-reaction').textContent = roll.reaction;
         });
         document.getElementById('cs-btn-send-danger')?.addEventListener('click', () => {
-            const item = currentRolls.danger || rollCategory('danger');
-            if (item) executeSend(`面对突发异变${item.event}，我们相依突围。`);
+            const roll = currentRolls.danger.event ? currentRolls.danger : rollCategoryMatrix('danger');
+            if (roll && roll.event) executeSend(`面对突发异变${roll.event}，我们相依突围。`);
         });
 
         // 奇珍萌物
         document.getElementById('cs-btn-roll-beast')?.addEventListener('click', () => {
-            const item = rollCategory('beast');
-            if (!item) return;
-            document.getElementById('cs-bt-name').textContent = item.name;
-            document.getElementById('cs-bt-habit').textContent = item.habit;
-            document.getElementById('cs-bt-bond').textContent = item.bond;
+            const roll = rollCategoryMatrix('beast');
+            if (!roll) return;
+            document.getElementById('cs-bt-name').textContent = roll.name;
+            document.getElementById('cs-bt-habit').textContent = roll.habit;
+            document.getElementById('cs-bt-bond').textContent = roll.bond;
         });
         document.getElementById('cs-btn-send-beast')?.addEventListener('click', () => {
-            const item = currentRolls.beast || rollCategory('beast');
-            if (item) executeSend(`记录奇珍【${item.name}】入图鉴。`);
+            const roll = currentRolls.beast.name ? currentRolls.beast : rollCategoryMatrix('beast');
+            if (roll && roll.name) executeSend(`记录奇珍【${roll.name}】入图鉴。`);
         });
 
         // 营火夜谈
         document.getElementById('cs-btn-start-camp')?.addEventListener('click', () => {
             const select = document.getElementById('cs-camp-topic-select');
             const topic = select ? select.value : '深夜私语';
-            executeSend(`在营火与夜色中，聊聊关于${topic}的心里话。`);
+            executeSend(`在夜色中，聊聊关于${topic}的心里话。`);
         });
 
         // 纪念行囊
         document.getElementById('cs-btn-roll-bag')?.addEventListener('click', () => {
-            const item = rollCategory('souvenirs');
-            if (!item) return;
-            document.getElementById('cs-souvenir-name').textContent = item.name;
-            document.getElementById('cs-souvenir-desc').textContent = item.desc;
-            document.getElementById('cs-souvenir-mem').textContent = item.mem;
+            const roll = rollCategoryMatrix('souvenirs');
+            if (!roll) return;
+            document.getElementById('cs-souvenir-name').textContent = roll.name;
+            document.getElementById('cs-souvenir-desc').textContent = roll.desc;
+            document.getElementById('cs-souvenir-mem').textContent = roll.mem;
         });
         document.getElementById('cs-btn-send-bag')?.addEventListener('click', () => {
-            const item = currentRolls.souvenirs || rollCategory('souvenirs');
-            if (item) executeSend(`从行囊里翻出${item.name}，聊聊旧事。`);
+            const roll = currentRolls.souvenirs.name ? currentRolls.souvenirs : rollCategoryMatrix('souvenirs');
+            if (roll && roll.name) executeSend(`从行囊里翻出${roll.name}，聊聊旧事。`);
         });
 
         // 拍立得
         document.getElementById('cs-btn-roll-photo')?.addEventListener('click', () => {
-            const item = rollCategory('photos');
-            if (!item) return;
-            document.getElementById('cs-ph-scene').textContent = item.scene;
-            document.getElementById('cs-ph-meta').textContent = item.meta;
-            document.getElementById('cs-ph-caption').textContent = item.caption;
-            document.getElementById('cs-ph-author').textContent = item.author;
+            const roll = rollCategoryMatrix('photos');
+            if (!roll) return;
+            document.getElementById('cs-ph-scene').textContent = roll.scene;
+            document.getElementById('cs-ph-meta').textContent = roll.meta;
+            document.getElementById('cs-ph-caption').textContent = roll.caption;
         });
         document.getElementById('cs-btn-send-photo')?.addEventListener('click', () => {
-            const item = currentRolls.photos || rollCategory('photos');
-            if (item) executeSend(`按动快门，定格这一瞬的记忆。`);
+            const roll = currentRolls.photos.scene ? currentRolls.photos : rollCategoryMatrix('photos');
+            if (roll && roll.scene) executeSend(`按动快门，定格这一瞬的记忆。`);
         });
 
-        // 刷新营火下拉列表
+        // 双人风尚衣箱
+        document.getElementById('cs-btn-roll-outfit')?.addEventListener('click', () => {
+            const roll = rollCategoryMatrix('outfit');
+            if (!roll) return;
+            document.getElementById('cs-outfit-style').textContent = roll.style;
+            document.getElementById('cs-outfit-desc').textContent = roll.desc;
+            document.getElementById('cs-outfit-react').textContent = roll.react;
+        });
+        document.getElementById('cs-btn-send-outfit')?.addEventListener('click', () => {
+            const roll = currentRolls.outfit.style ? currentRolls.outfit : rollCategoryMatrix('outfit');
+            if (roll && roll.style) executeSend(`换上${roll.style}一同出发。`);
+        });
+
         refreshCampTopics();
     }
 
     function refreshCampTopics() {
         const select = document.getElementById('cs-camp-topic-select');
-        if (!select || !activePoolData || !activePoolData.camp_topics) return;
-        select.innerHTML = activePoolData.camp_topics.map(t => `<option value="${t}">${t}</option>`).join('');
+        if (!select || !activeCategories?.camp_topics?.slots?.topic) return;
+        const list = activeCategories.camp_topics.slots.topic.items || [];
+        select.innerHTML = list.map(t => `<option value="${t}">${t}</option>`).join('');
     }
 
     /**
-     * 6. 可视化词库管理器 (Settings UI)
+     * 5. 可视化槽位词条管理面板 (Settings UI)
      */
     function setupSettingsUI() {
         const settings = getSettings();
+
+        // 抽屉原生折叠与展开
+        const drawerHeader = document.getElementById('cs-drawer-header');
+        const drawerBody = document.getElementById('cs-drawer-body');
+        const drawerIcon = document.getElementById('cs-drawer-icon');
+        if (drawerHeader && drawerBody) {
+            drawerHeader.addEventListener('click', () => {
+                const isHidden = drawerBody.style.display === 'none';
+                drawerBody.style.display = isHidden ? 'block' : 'none';
+                if (drawerIcon) {
+                    drawerIcon.classList.toggle('open', isHidden);
+                    drawerIcon.classList.toggle('down', !isHidden);
+                }
+            });
+        }
 
         // 开关监听
         const injectToggle = document.getElementById('cs-auto-inject-toggle');
@@ -531,34 +533,37 @@
                 settings.activePreset = presetSelect.value;
                 resolveActivePool();
                 saveSettings();
-                renderCategoryCards();
+                renderSlotBar();
+                renderPills();
                 refreshCampTopics();
             });
         }
 
-        // 分类标签切换
+        // 一级大类选择
         document.querySelectorAll('#cs-category-tabs .cs-tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('#cs-category-tabs .cs-tab-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentCategory = btn.getAttribute('data-cat');
-                renderCategoryCards();
-                renderAddForm();
+                const slots = activeCategories[currentCategory]?.slots || {};
+                currentSlot = Object.keys(slots)[0] || '';
+                renderSlotBar();
+                renderPills();
             });
         });
 
         // 导出词库
         document.getElementById('cs-export-pool-btn')?.addEventListener('click', () => {
-            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(activePoolData, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute('href', dataStr);
-            downloadAnchor.setAttribute('download', `chronicle_pool_${settings.activePreset}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(activeCategories, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute('href', dataStr);
+            a.setAttribute('download', `chronicle_matrix_${settings.activePreset}.json`);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
         });
 
-        // 上传词库
+        // 导入词库
         const fileInput = document.getElementById('cs-pool-file-input');
         document.getElementById('cs-import-pool-btn')?.addEventListener('click', () => fileInput?.click());
         fileInput?.addEventListener('change', (e) => {
@@ -568,14 +573,15 @@
             reader.onload = (event) => {
                 try {
                     const parsed = JSON.parse(event.target.result);
-                    settings.customPool = parsed.pools ? parsed : { pools: parsed };
+                    settings.customCategories = parsed.categories || parsed;
                     settings.activePreset = 'custom';
                     if (presetSelect) presetSelect.value = 'custom';
                     resolveActivePool();
                     saveSettings();
-                    renderCategoryCards();
+                    renderSlotBar();
+                    renderPills();
                     refreshCampTopics();
-                    toastr.success('自定义词库已成功导入！');
+                    toastr.success('自定义多维词库已成功导入！');
                 } catch (err) {
                     toastr.error('文件格式错误，非有效 JSON 词库！');
                 }
@@ -585,195 +591,128 @@
 
         // 重置词库
         document.getElementById('cs-reset-pool-btn')?.addEventListener('click', () => {
-            if (confirm('确定将当前词库重置回初始默认状态吗？')) {
-                if (settings.activePreset === 'custom') settings.customPool = null;
+            if (confirm('确定将当前词库重置回官方默认预设吗？')) {
+                if (settings.activePreset === 'custom') settings.customCategories = null;
                 settings.activePreset = 'eorzea';
                 if (presetSelect) presetSelect.value = 'eorzea';
                 resolveActivePool();
                 saveSettings();
-                renderCategoryCards();
+                renderSlotBar();
+                renderPills();
                 refreshCampTopics();
                 toastr.info('已恢复为初始默认预设。');
             }
         });
 
-        // 提交添加新词条
-        document.getElementById('cs-submit-add-btn')?.addEventListener('click', submitNewItem);
+        // 添加新词条（按钮与回车触发）
+        document.getElementById('cs-add-word-btn')?.addEventListener('click', submitAddWord);
+        document.getElementById('cs-new-word-input')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitAddWord();
+        });
 
-        renderCategoryCards();
-        renderAddForm();
+        renderSlotBar();
+        renderPills();
     }
 
     /**
-     * 渲染当前分类下的条目卡片（带一键删除）
+     * 渲染二级小类（槽位 Slot）按钮栏
      */
-    function renderCategoryCards() {
-        const container = document.getElementById('cs-items-container');
-        const statBadge = document.getElementById('cs-pool-stat');
-        if (!container || !activePoolData) return;
+    function renderSlotBar() {
+        const container = document.getElementById('cs-slots-container');
+        if (!container || !activeCategories || !activeCategories[currentCategory]) return;
+        const slots = activeCategories[currentCategory].slots || {};
 
-        const list = activePoolData[currentCategory] || [];
-        if (statBadge) statBadge.textContent = `当前分类计 ${list.length} 个词条`;
+        container.innerHTML = Object.entries(slots).map(([slotKey, slotObj]) => `
+            <button type="button" class="cs-slot-btn ${slotKey === currentSlot ? 'active' : ''}" data-slot="${slotKey}">
+                ${slotObj.name}
+            </button>
+        `).join('');
 
-        if (list.length === 0) {
-            container.innerHTML = '<div style="padding:15px;text-align:center;opacity:0.6;font-size:12px;">此分类下暂无词条，请在下方直接输入添加。</div>';
+        container.querySelectorAll('.cs-slot-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                container.querySelectorAll('.cs-slot-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentSlot = btn.getAttribute('data-slot');
+                renderPills();
+            });
+        });
+    }
+
+    /**
+     * 渲染当前槽位下的词条胶囊 (Tag Pills)
+     */
+    function renderPills() {
+        const pillsContainer = document.getElementById('cs-pills-container');
+        const titleEl = document.getElementById('cs-current-slot-title');
+        const countBadge = document.getElementById('cs-slot-count');
+        const inputEl = document.getElementById('cs-new-word-input');
+        if (!pillsContainer || !activeCategories) return;
+
+        const slotObj = activeCategories[currentCategory]?.slots?.[currentSlot];
+        if (!slotObj) {
+            pillsContainer.innerHTML = '<div style="opacity:0.6;font-size:11.5px;padding:8px;">暂无可管理的槽位</div>';
             return;
         }
 
-        container.innerHTML = list.map((item, idx) => {
-            let fieldsHtml = '';
-            if (typeof item === 'string') {
-                fieldsHtml = `<div class="cs-card-field-row">${item}</div>`;
-            } else {
-                fieldsHtml = Object.entries(item).map(([k, v]) => `
-                    <div class="cs-card-field-row"><b>${k}：</b>${v}</div>
-                `).join('');
-            }
+        if (titleEl) titleEl.textContent = `${slotObj.name} · 词条管理`;
+        const items = slotObj.items || [];
+        if (countBadge) countBadge.textContent = `${items.length} 个`;
+        if (inputEl) inputEl.placeholder = `输入新的【${slotObj.name}】按回车添加...`;
 
-            return `
-                <div class="cs-item-card" data-idx="${idx}">
-                    <button type="button" class="cs-card-delete-btn" onclick="window.csDeleteItem(${idx})">删除</button>
-                    ${fieldsHtml}
-                </div>
-            `;
-        }).join('');
-    }
-
-    // 全局删除函数
-    window.csDeleteItem = function (idx) {
-        if (!activePoolData || !activePoolData[currentCategory]) return;
-        activePoolData[currentCategory].splice(idx, 1);
-        const settings = getSettings();
-        if (settings.activePreset !== 'custom') {
-            // 如果修改了内置预设，则自动克隆为 custom
-            settings.customPool = { pools: JSON.parse(JSON.stringify(activePoolData)) };
-            settings.activePreset = 'custom';
-            const sel = document.getElementById('cs-active-preset-select');
-            if (sel) sel.value = 'custom';
+        if (items.length === 0) {
+            pillsContainer.innerHTML = '<div style="opacity:0.6;font-size:11.5px;padding:8px;">此槽位下暂无词条，请在下方直接输入添加。</div>';
+            return;
         }
-        saveSettings();
-        renderCategoryCards();
-        refreshCampTopics();
-    };
 
-    /**
-     * 动态生成适合当前分类的中文添加表单
-     */
-    function renderAddForm() {
-        const formBox = document.getElementById('cs-dynamic-inputs');
-        if (!formBox) return;
-
-        const fieldConfigs = {
-            voyage: [
-                { id: 'f-biome', label: '地界名称', ph: '如：悬空浮岛 / 老城古着咖啡馆' },
-                { id: 'f-sense', label: '五感环境', ph: '如：瀑布逆流向天际 / 咖啡豆浓郁烘焙香' },
-                { id: 'f-race', label: '遇逢生灵/人群', ph: '如：长羽盲灵族 / 街角滑板青年' },
-                { id: 'f-traits', label: '生灵体征特征', ph: '如：体态纤细柔白 / 身穿宽松工装' },
-                { id: 'f-custom', label: '当地事态活动', ph: '如：一年一度水灯节 / 周末跳蚤市集' },
-                { id: 'f-incident', label: '具体际遇情节', ph: '如：孩童捧出发光花瓣 / 老板多送一球抹茶冰淇淋' },
-                { id: 'f-bond', label: '旅伴神态台词', ph: '如：他/她拂去尘露：“随你高兴罢。”' }
-            ],
-            dungeon: [
-                { id: 'f-name', label: '迷宫/区域名称', ph: '如：【深海结晶灵庙】 / 【宜家样板迷宫】' },
-                { id: 'f-desc', label: '环境特色描写', ph: '如：青蓝以太水幕流转 / 转角一个接一个永远找不到出口' },
-                { id: 'f-trap', label: '解密机关障碍', ph: '如：双人注入共鸣石柱 / 陷入柔软双人沙发' },
-                { id: 'f-boss', label: '阻碍守关者', ph: '如：万年白银守卫构装体 / 推满购物车的人潮' },
-                { id: 'f-reward', label: '终局通关相伴', ph: '如：悬空石台牵手 / 抱着鲨鱼玩偶相视失笑' }
-            ],
-            treasure: [
-                { id: 'f-map', label: '宝图/线索名称', ph: '如：【漂流密图】 / 【老城区探店手绘图】' },
-                { id: 'f-riddle', label: '古图谜题引语', ph: '如：“当双生月在断崖交叠……”' },
-                { id: 'f-lock', label: '解谜机关守卫', ph: '如：顺毛发光巨兽 / 长队与火爆手艺阿姨' },
-                { id: 'f-loot', label: '出土宝物与趣闻', ph: '如：水晶发簪 / 刚出锅的小酥肉抢着吃' }
-            ],
-            cook: [
-                { id: 'f-name', label: '风味料理名称', ph: '如：【浮岛晶鱼泥炉烧】 / 【暴雨深夜芝士辛拉面】' },
-                { id: 'f-ing', label: '食材用料', ph: '如：发光飞鱼与雪花菌 / 辛拉面、厚切午餐肉与双层芝士' },
-                { id: 'f-taste', label: '舌尖奇妙口感', ph: '如：焦香爽脆炸开微酸 / 热气腾腾红亮浓汤吸入满足' },
-                { id: 'f-bond', label: '双人围炉喂食', ph: '如：细心挑出鱼刺喂进你嘴里 / 递来冰可乐擦掉嘴角辣油' }
-            ],
-            danger: [
-                { id: 'f-event', label: '险情异变名称', ph: '如：【浮岛以太逆涌裂隙】 / 【暴雨且打不到车】' },
-                { id: 'f-scene', label: '险境发生过程', ph: '如：石梁断裂滑入岩隙 / 雨伞翻折缩在站台' },
-                { id: 'f-pinch', label: '狭窄贴身困境', ph: '如：紧紧相拥呼吸交缠 / 把伞全偏向你半肩湿透' },
-                { id: 'f-reaction', label: '恋人的庇护', ph: '如：声音发颤抱紧：“你若出事我怎么办？”' }
-            ],
-            beast: [
-                { id: 'f-name', label: '生灵名称', ph: '如：【星尘夜光水豚】 / 【便利店霸道胖橘】' },
-                { id: 'f-look', label: '外貌特征', ph: '如：头顶小睡莲 / 浑圆如冬瓜挂小项圈' },
-                { id: 'f-habit', label: '奇葩习性', ph: '如：非要钻进口袋当窝 / 瘫在鞋上假摔碰瓷' },
-                { id: 'f-bond', label: '旅伴破防互动', ph: '如：嫌脏却身体僵硬不敢乱动 / 叹气蹲下给开罐头' }
-            ],
-            outfit: [
-                { id: 'f-style', label: '装束风格名称', ph: '如：【极北加厚毛绒旅行斗篷】 / 【美式复古宽松连帽卫衣】' },
-                { id: 'f-desc', label: '装束面料与细节', ph: '如：羊绒大衣与雪狐绒 / 一灰一藏青配直筒牛仔裤' },
-                { id: 'f-react', label: '旅伴吃醋/系带动作', ph: '如：顺手帮你拉好兜帽 / 把手插进你卫衣口袋握紧' }
-            ],
-            camp_topics: [
-                { id: 'f-text', label: '话题名称与描述', ph: '如：【深夜阳台】吹着凌晨两点的凉风聊聊年少梦想' }
-            ],
-            souvenirs: [
-                { id: 'f-name', label: '信物名称', ph: '如：【风蚀空心鸣石】 / 【旧电影票根】' },
-                { id: 'f-desc', label: '信物外观描述', ph: '如：吹气发出鸟鸣 / 泛黄卷边热敏纸票根' },
-                { id: 'f-mem', label: '背后的专属回忆', ph: '如：偷偷找工匠打了银丝挂绳 / 第一次牵手触电般缩回' }
-            ],
-            photos: [
-                { id: 'f-scene', label: '镜头分镜场景', ph: '如：【黄昏绝壁剪影】 / 【雨夜便利店玻璃对视】' },
-                { id: 'f-meta', label: '光影与画面氛围', ph: '如：落日染红海面吹乱披风 / 暖黄灯光晕染温柔轮廓' },
-                { id: 'f-caption', label: '手写批注留言', ph: '如：“头发吹得像雀尾。——真傻，但还算好看。”' },
-                { id: 'f-author', label: '落款签名', ph: '如：—— 恋人 随身便签留字' }
-            ]
-        };
-
-        const config = fieldConfigs[currentCategory] || [{ id: 'f-text', label: '内容', ph: '输入词条内容' }];
-        formBox.innerHTML = config.map(item => `
-            <div class="cs-input-group">
-                <label>${item.label}</label>
-                <input type="text" class="cs-input" id="${item.id}" placeholder="${item.ph}">
+        pillsContainer.innerHTML = items.map((word, idx) => `
+            <div class="cs-word-pill">
+                <span>${word}</span>
+                <span class="cs-pill-del" onclick="window.csDeleteSingleWord(${idx})" title="删除此词">×</span>
             </div>
         `).join('');
     }
 
-    function submitNewItem() {
-        if (!activePoolData) return;
-        if (!activePoolData[currentCategory]) activePoolData[currentCategory] = [];
+    /**
+     * 单个词条删除与添加
+     */
+    window.csDeleteSingleWord = function (idx) {
+        const slotObj = activeCategories?.[currentCategory]?.slots?.[currentSlot];
+        if (!slotObj || !Array.isArray(slotObj.items)) return;
+        slotObj.items.splice(idx, 1);
 
-        let newItem = null;
-        if (currentCategory === 'camp_topics') {
-            const val = document.getElementById('f-text')?.value?.trim();
-            if (!val) { toastr.warning('请输入话题内容！'); return; }
-            newItem = val;
-        } else {
-            const inputs = document.querySelectorAll('#cs-dynamic-inputs input');
-            newItem = {};
-            let hasVal = false;
-            inputs.forEach(input => {
-                const key = input.id.replace('f-', '');
-                const val = input.value.trim();
-                if (val) hasVal = true;
-                newItem[key] = val;
-            });
-            if (!hasVal) { toastr.warning('请至少填写一项内容！'); return; }
-        }
+        autoUpgradeToCustom();
+        saveSettings();
+        renderPills();
+        refreshCampTopics();
+    };
 
-        activePoolData[currentCategory].push(newItem);
+    function submitAddWord() {
+        const inputEl = document.getElementById('cs-new-word-input');
+        const word = inputEl?.value?.trim();
+        if (!word) return;
 
-        // 如果修改了内置预设，自动升级为 custom 存储
+        const slotObj = activeCategories?.[currentCategory]?.slots?.[currentSlot];
+        if (!slotObj) return;
+        if (!Array.isArray(slotObj.items)) slotObj.items = [];
+
+        slotObj.items.push(word);
+        autoUpgradeToCustom();
+        saveSettings();
+        renderPills();
+        refreshCampTopics();
+
+        inputEl.value = '';
+        toastr.success(`已添加：“${word}”`);
+    }
+
+    function autoUpgradeToCustom() {
         const settings = getSettings();
         if (settings.activePreset !== 'custom') {
-            settings.customPool = { pools: JSON.parse(JSON.stringify(activePoolData)) };
+            settings.customCategories = JSON.parse(JSON.stringify(activeCategories));
             settings.activePreset = 'custom';
             const sel = document.getElementById('cs-active-preset-select');
             if (sel) sel.value = 'custom';
         }
-
-        saveSettings();
-        renderCategoryCards();
-        refreshCampTopics();
-
-        // 清空输入框
-        document.querySelectorAll('#cs-dynamic-inputs input').forEach(inp => inp.value = '');
-        toastr.success('新词条已成功添加入库！');
     }
 
     /**
@@ -785,7 +724,6 @@
         updateExtensionPrompt();
         await mountModal();
 
-        // 监听酒馆原生事件
         const context = SillyTavern.getContext();
         const eventSource = context.eventSource;
         const eventTypes = context.eventTypes;
@@ -795,7 +733,6 @@
             eventSource.on(eventTypes.CHAT_COMPLETION_PROMPT_READY, () => updateExtensionPrompt());
         }
 
-        // 加载并注入设置面板
         try {
             const settingsResp = await fetch(`scripts/extensions/third-party/${EXTENSION_NAME}/templates/settings.html`);
             const settingsHtml = await settingsResp.text();

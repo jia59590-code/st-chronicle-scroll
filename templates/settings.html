@@ -1,110 +1,85 @@
-<div class="cs-settings-container">
-    <div class="cs-header-banner">
-        <h3 class="cs-title">纪行手记 · 设置与词库工坊</h3>
-        <p class="cs-subtitle">无需在角色卡配置世界书，插件已接管提示词指令下发与数据动态拦截。您可以在下方自由切换预设或零代码可视化增删玩法词库。</p>
+<div class="inline-drawer" id="cs-settings-drawer">
+    <div class="inline-drawer-toggle inline-drawer-header" id="cs-drawer-header">
+        <b>纪行手记 · 设置与多维词库</b>
+        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down" id="cs-drawer-icon"></div>
     </div>
 
-    <!-- 基础开关面板 -->
-    <div class="cs-section-box">
-        <h4 class="cs-section-title">核心功能与提示词注入</h4>
-        <div class="cs-toggle-row">
-            <div class="cs-toggle-info">
-                <span class="cs-toggle-label">自动下发格式指令 (Prompt Injection)</span>
-                <span class="cs-toggle-desc">在对话发送前，自动将手记输出规范注入到提示词末尾，使任何角色卡无需配置世界书均能输出手记数据。</span>
+    <div class="inline-drawer-content" id="cs-drawer-body" style="display: none; padding: 10px 4px;">
+        <!-- 基础开关面板 -->
+        <div class="cs-setting-group">
+            <div class="cs-toggle-row">
+                <span class="cs-toggle-label">自动下发格式指令</span>
+                <label class="cs-switch">
+                    <input type="checkbox" id="cs-auto-inject-toggle" checked>
+                    <span class="cs-slider"></span>
+                </label>
             </div>
-            <label class="cs-switch">
-                <input type="checkbox" id="cs-auto-inject-toggle" checked>
-                <span class="cs-slider"></span>
-            </label>
+            <p class="cs-hint-text">发信前自动将手记格式注入到提示词末尾，使任何角色卡无需配置世界书均能输出手记。</p>
+
+            <div class="cs-toggle-row" style="margin-top: 8px;">
+                <span class="cs-toggle-label">正文自动洁净 (隐藏标签代码)</span>
+                <label class="cs-switch">
+                    <input type="checkbox" id="cs-hide-raw-tag" checked>
+                    <span class="cs-slider"></span>
+                </label>
+            </div>
+            <p class="cs-hint-text">自动抓取手记数据并把楼层正文里的原始标签隐藏，保持小说沉浸阅读感。</p>
         </div>
 
-        <div class="cs-toggle-row" style="margin-top: 12px;">
-            <div class="cs-toggle-info">
-                <span class="cs-toggle-label">聊天楼层自动洁净 (Hide Raw Tag)</span>
-                <span class="cs-toggle-desc">在大模型回复后自动提取数据，并将正文楼层里的原始标签文本隐藏，保持文学剧情阅读体验。</span>
-            </div>
-            <label class="cs-switch">
-                <input type="checkbox" id="cs-hide-raw-tag" checked>
-                <span class="cs-slider"></span>
-            </label>
-        </div>
-    </div>
+        <div class="cs-divider" style="margin: 10px 0;"></div>
 
-    <!-- 词库管理主面板 -->
-    <div class="cs-section-box">
-        <div class="cs-row-between">
-            <div>
-                <h4 class="cs-section-title" style="margin-bottom: 2px;">玩法词库管理器</h4>
-                <p class="cs-toggle-desc">切换不同题材的冒险奇遇，或自由扩充属于您的独家剧情互动池。</p>
+        <!-- 词库预设与全局操作 -->
+        <div class="cs-setting-group">
+            <div class="cs-row-between" style="align-items: center; margin-bottom: 8px;">
+                <label class="cs-toggle-label" for="cs-active-preset-select">当前运行词库：</label>
+                <div class="cs-btn-group">
+                    <button type="button" class="menu_button" id="cs-export-pool-btn" title="导出当前词库 JSON">导出</button>
+                    <button type="button" class="menu_button" id="cs-import-pool-btn" title="上传自定义 JSON">导入</button>
+                    <input type="file" id="cs-pool-file-input" accept=".json" style="display: none;">
+                    <button type="button" class="menu_button" id="cs-reset-pool-btn" title="重置回官方默认预设" style="color: #e74c3c;">重置</button>
+                </div>
             </div>
-            <div class="cs-btn-group">
-                <button type="button" class="cs-btn secondary" id="cs-export-pool-btn" title="导出当前词库为独立 JSON 文件">
-                    <span>导出词库</span>
-                </button>
-                <button type="button" class="cs-btn secondary" id="cs-import-pool-btn" title="上传自定义 JSON 词库">
-                    <span>上传词库</span>
-                </button>
-                <input type="file" id="cs-pool-file-input" accept=".json" style="display: none;">
-                <button type="button" class="cs-btn danger" id="cs-reset-pool-btn" title="重置当前词库为官方初始状态">
-                    <span>重置预设</span>
-                </button>
-            </div>
+            <select id="cs-active-preset-select" class="text_pole" style="width: 100%; margin-bottom: 10px;">
+                <option value="eorzea">艾欧泽亚传奇 (高魔古典奇幻)</option>
+                <option value="modern">都市漫游录 (现代甜蜜生活)</option>
+                <option value="custom">我的专属自定义词库</option>
+            </select>
         </div>
 
-        <!-- 词库预设切换与统计 -->
-        <div class="cs-pool-select-bar">
-            <div class="cs-select-wrapper">
-                <label for="cs-active-preset-select" class="cs-field-label">当前运行词库：</label>
-                <select id="cs-active-preset-select" class="cs-select">
-                    <option value="eorzea">艾欧泽亚传奇 (高魔古典奇幻)</option>
-                    <option value="modern">都市漫游录 (现代甜蜜生活)</option>
-                    <option value="custom">我的专属自定义词库</option>
-                </select>
-            </div>
-            <div class="cs-pool-stat-badge" id="cs-pool-stat">
-                共计 0 个可用词条
-            </div>
-        </div>
-
-        <!-- 可视化玩法分类标签栏 -->
+        <!-- 一级大类选择（横向滑动胶囊） -->
         <div class="cs-tabs-header" id="cs-category-tabs">
             <button type="button" class="cs-tab-btn active" data-cat="voyage">未知漫游</button>
             <button type="button" class="cs-tab-btn" data-cat="dungeon">秘境迷宫</button>
-            <button type="button" class="cs-tab-btn" data-cat="treasure">寻宝古图</button>
             <button type="button" class="cs-tab-btn" data-cat="cook">荒野野炊</button>
             <button type="button" class="cs-tab-btn" data-cat="danger">突发险情</button>
-            <button type="button" class="cs-tab-btn" data-cat="beast">奇珍生灵</button>
+            <button type="button" class="cs-tab-btn" data-cat="beast">奇珍萌物</button>
             <button type="button" class="cs-tab-btn" data-cat="outfit">风尚衣箱</button>
             <button type="button" class="cs-tab-btn" data-cat="camp_topics">营火夜谈</button>
             <button type="button" class="cs-tab-btn" data-cat="souvenirs">纪念行囊</button>
             <button type="button" class="cs-tab-btn" data-cat="photos">旅途拍立得</button>
         </div>
 
-        <!-- 词条展示与增删区 -->
-        <div class="cs-category-panel">
-            <div class="cs-panel-header">
-                <span class="cs-category-desc" id="cs-cat-description">当前分类词条列表（点击文字可直接编辑，点击右上角可删除）：</span>
+        <!-- 二级小类（槽位 Slot）选择栏 -->
+        <div class="cs-slot-bar" id="cs-slots-container">
+            <!-- 动态生成当前大类下的所有小类按钮，如：[秘境地界] [遇逢生灵] [当地事态] [旅伴相处] -->
+        </div>
+
+        <!-- 当前小类下的词条管理区 -->
+        <div class="cs-words-box">
+            <div class="cs-words-header">
+                <span id="cs-current-slot-title" class="cs-slot-title">词条列表</span>
+                <span id="cs-slot-count" class="cs-badge">0 个</span>
             </div>
 
-            <!-- 动态卡片列表容器 -->
-            <div class="cs-card-grid" id="cs-items-container">
-                <!-- 由 JavaScript 动态渲染各条目卡片 -->
+            <!-- 词条气泡标签池（点击 × 即可删除单个词） -->
+            <div class="cs-pills-container" id="cs-pills-container">
+                <!-- 动态渲染词条胶囊 -->
             </div>
 
-            <!-- 人性化快速添加新词条表单 -->
-            <div class="cs-add-card-box">
-                <div class="cs-add-header">
-                    <span class="cs-add-title">+ 添加新词条到当前分类</span>
-                    <span class="cs-add-tip">直接填写以下内容即可，无需编写任何代码。</span>
-                </div>
-                <div class="cs-add-form-fields" id="cs-dynamic-inputs">
-                    <!-- 动态生成适合当前分类的中文输入框 -->
-                </div>
-                <div class="cs-add-actions">
-                    <button type="button" class="cs-btn primary" id="cs-submit-add-btn">
-                        <span>确认添加到当前词库</span>
-                    </button>
-                </div>
+            <!-- 快速添加单个词条栏 -->
+            <div class="cs-inline-add-bar">
+                <input type="text" id="cs-new-word-input" class="text_pole" placeholder="输入新词条..." style="flex: 1;">
+                <button type="button" class="menu_button primary" id="cs-add-word-btn">+ 添加</button>
             </div>
         </div>
     </div>
