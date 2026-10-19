@@ -222,8 +222,49 @@
 .cs-btn.primary { background: var(--cs-gold); color: #fff; }
 
 /* ========================================================
-   3. 词库设置面板（原生酒馆抽屉规范适配）
+   3. 词库设置面板（原生稳健折叠与抽屉适配）
    ======================================================== */
+.cs-settings-details {
+    margin: 8px 0;
+    border: 1px solid rgba(179, 135, 40, 0.3);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+}
+.cs-settings-summary {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(179, 135, 40, 0.12);
+    cursor: pointer;
+    user-select: none;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--cs-gold);
+    list-style: none !important;
+    outline: none;
+}
+.cs-settings-summary::-webkit-details-marker {
+    display: none !important;
+}
+.cs-summary-arrow {
+    font-size: 11px;
+    transition: transform 0.25s ease;
+    opacity: 0.7;
+}
+.cs-settings-details[open] .cs-summary-arrow {
+    transform: rotate(180deg);
+}
+.cs-drawer-inner {
+    padding: 12px 14px;
+    animation: csDrawerFadeIn 0.25s ease;
+}
+@keyframes csDrawerFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .cs-setting-group {
     padding: 4px 0;
 }

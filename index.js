@@ -490,18 +490,11 @@
     function setupSettingsUI() {
         const settings = getSettings();
 
-        // 抽屉原生折叠与展开
-        const drawerHeader = document.getElementById('cs-drawer-header');
-        const drawerBody = document.getElementById('cs-drawer-body');
-        const drawerIcon = document.getElementById('cs-drawer-icon');
-        if (drawerHeader && drawerBody) {
-            drawerHeader.addEventListener('click', () => {
-                const isHidden = drawerBody.style.display === 'none';
-                drawerBody.style.display = isHidden ? 'block' : 'none';
-                if (drawerIcon) {
-                    drawerIcon.classList.toggle('open', isHidden);
-                    drawerIcon.classList.toggle('down', !isHidden);
-                }
+        // 阻止设置面板内的点击事件冒泡，防止外部酒馆抽屉意外关闭
+        const drawerContainer = document.getElementById('cs-settings-drawer');
+        if (drawerContainer) {
+            drawerContainer.addEventListener('click', (e) => {
+                e.stopPropagation();
             });
         }
 
