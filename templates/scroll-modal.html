@@ -1,0 +1,309 @@
+<!-- 悬浮折叠/展开主按钮 -->
+<div id="cs-global-toggle-btn" class="cs-toggle-btn" title="点击展开/合上纪行手记">
+    <div class="cs-pulse-ring"></div>
+    <span class="cs-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+    </span>
+    <span class="cs-toggle-text">纪行手记</span>
+</div>
+
+<!-- 主体手记界面容器 -->
+<div id="cs-book-modal-wrapper" class="cs-modal-wrapper cs-hidden">
+    <div class="cs-backdrop" id="cs-modal-backdrop"></div>
+    
+    <div class="cs-book-container cs-theme-classic" id="cs-main-book">
+        <!-- 悬浮在外框上方右侧的控制面板 -->
+        <div class="cs-controls">
+            <button type="button" class="cs-ctrl-btn" id="cs-theme-toggle" title="切换古典羊皮纸 / 暗夜视界">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+            <button type="button" class="cs-ctrl-btn" id="cs-close-book" title="合上手记">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+
+        <div class="cs-book-pages">
+            <!-- 侧边导航 7 大主书签 -->
+            <div class="cs-bookmarks" id="cs-nav-bookmarks">
+                <div class="cs-bookmark active" data-tab="env" title="以太环境与天候">视界</div>
+                <div class="cs-bookmark" data-tab="user" title="自我检视与行装">映像</div>
+                <div class="cs-bookmark" data-tab="party" title="羁绊交响与同行者">交汇</div>
+                <div class="cs-bookmark" data-tab="world" title="大地暗流与传闻">风语</div>
+                <div class="cs-bookmark" data-tab="voyage" title="奇遇罗盘与七大玩法">星盘</div>
+                <div class="cs-bookmark" data-tab="camp" title="营火密语与旧梦">营火</div>
+                <div class="cs-bookmark" data-tab="post" title="信箱行囊与慢舞">信物</div>
+            </div>
+
+            <!-- 页面主体内容渲染区 -->
+            <div class="cs-page-content-wrapper">
+                <div class="cs-magic-bg"></div>
+
+                <!-- Page 1: 环境与任务 (Env) -->
+                <div class="cs-page cs-page-env active" id="cs-tab-env">
+                    <h2 class="cs-page-title glow-text">天候与时刻</h2>
+                    <div class="cs-grid-2">
+                        <div class="cs-data-card"><span class="cs-label">当前时刻</span><span class="cs-field" id="cs-field-time">待展开冒险...</span></div>
+                        <div class="cs-data-card"><span class="cs-label">以太气流</span><span class="cs-field" id="cs-field-weather">待展开冒险...</span></div>
+                    </div>
+                    <div class="cs-data-box">
+                        <div class="cs-box-title">身处地界</div>
+                        <div class="cs-box-content cs-field" id="cs-field-loc">尚未检测到位置记录</div>
+                    </div>
+                    <div class="cs-data-box">
+                        <div class="cs-box-title">环境观察</div>
+                        <div class="cs-box-content italic cs-field" id="cs-field-obs">微风与以太在此处悄然流转……</div>
+                    </div>
+                    <div class="cs-divider"></div>
+                    <h2 class="cs-page-title glow-text">冒险指针</h2>
+                    <details class="cs-accordion" open>
+                        <summary>当前事态 <span class="cs-arrow">▼</span></summary>
+                        <div class="cs-acc-content cs-field" id="cs-quest-current">与旅伴正步入新的旅途。</div>
+                    </details>
+                    <details class="cs-accordion">
+                        <summary>暗流线索 <span class="cs-arrow">▼</span></summary>
+                        <div class="cs-acc-content cs-field" id="cs-quest-clues">前路尚有未知隐线待发掘。</div>
+                    </details>
+                    <details class="cs-accordion">
+                        <summary>心念所向 <span class="cs-arrow">▼</span></summary>
+                        <div class="cs-acc-content cs-field" id="cs-quest-mind">心中自有笃定的方向。</div>
+                    </details>
+                </div>
+
+                <!-- Page 2: 玩家状态与情侣装 (User) -->
+                <div class="cs-page cs-page-user" id="cs-tab-user">
+                    <h2 class="cs-page-title glow-text">灵魂映像</h2>
+                    <div class="cs-soul-chart">
+                        <div class="cs-chart-ring"></div>
+                        <div class="cs-chart-core pulse"></div>
+                        <div class="cs-chart-label top cs-field" id="cs-user-role">冒险者</div>
+                    </div>
+                    <div class="cs-data-box"><div class="cs-box-title">脉轮状态</div><div class="cs-box-content highlight-text cs-field" id="cs-user-state">神完气足</div></div>
+                    <div class="cs-data-box"><div class="cs-box-title">神态装束</div><div class="cs-box-content cs-field" id="cs-user-look">旅装整洁，步履从容</div></div>
+                    <div class="cs-data-box"><div class="cs-box-title">随身所持</div><div class="cs-box-content cs-field" id="cs-user-items">随身行囊与重要信物</div></div>
+
+                    <!-- 双人风尚衣箱 -->
+                    <div class="cs-divider"></div>
+                    <h2 class="cs-page-title glow-text">双人风尚衣箱</h2>
+                    <div class="cs-data-box hover-lift">
+                        <div class="cs-box-title cs-field" id="cs-outfit-style">【极北加厚旅行斗篷情侣套】</div>
+                        <div class="cs-box-content text-sm cs-field" id="cs-outfit-desc">防风保暖的羊绒大衣，两人胸前配有同款银扣。</div>
+                        <div class="cs-divider" style="margin: 8px 0;"></div>
+                        <div class="cs-box-content italic text-sm secret-text cs-field" id="cs-outfit-react">恋人顺手帮你把防风兜帽拉好、遮住你被寒风吹红的耳朵。</div>
+                    </div>
+                    <div class="cs-actions-row">
+                        <button type="button" class="cs-btn pulse-glow" id="cs-btn-roll-outfit">搭配新装束</button>
+                        <button type="button" class="cs-btn primary" id="cs-btn-send-outfit">换上这套行装</button>
+                    </div>
+                </div>
+
+                <!-- Page 3: 伴侣深层与同行队伍 (Party) -->
+                <div class="cs-page cs-page-party" id="cs-tab-party">
+                    <h2 class="cs-page-title glow-text">注目旅伴 · 深层探查</h2>
+                    <div class="cs-carousel">
+                        <div class="cs-flip-card" id="cs-lover-flip-card">
+                            <div class="cs-flip-inner">
+                                <div class="cs-flip-front">
+                                    <div class="cs-avatar-seal">
+                                        <div class="cs-seal-ring"></div>
+                                        <span class="cs-seal-core">✦</span>
+                                    </div>
+                                    <div class="cs-lover-name cs-field" id="cs-lover-name">同行挚友</div>
+                                    <div class="cs-lover-dist cs-field" id="cs-lover-dist">默契相伴</div>
+                                    <div class="cs-flip-hint">点击卡片翻转探查深层隐微</div>
+                                </div>
+                                <div class="cs-flip-back">
+                                    <div class="cs-box-title">表象心境</div>
+                                    <div class="cs-box-content text-sm cs-field" id="cs-lover-surface">神色从容平淡</div>
+                                    <div class="cs-divider"></div>
+                                    <div class="cs-box-title secret-text">隐微真意</div>
+                                    <div class="cs-box-content text-sm cs-field" id="cs-lover-deep">目光始终不着痕迹地停留在你身上。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="cs-sub-title">同行队伍</h3>
+                    <div class="cs-party-list" id="cs-party-list-container">
+                        <div class="cs-party-item"><span class="name">独行</span> · <span class="status">随行漫步</span></div>
+                    </div>
+                </div>
+
+                <!-- Page 4: 世界暗流传闻 (World) -->
+                <div class="cs-page cs-page-world" id="cs-tab-world">
+                    <h2 class="cs-page-title glow-text">风之低语 · 大陆传闻</h2>
+                    <div class="cs-world-list" id="cs-world-list-container">
+                        <div class="cs-world-item">
+                            <div class="title">市井流言</div>
+                            <div class="desc">远方城邦波澜不惊，商队正陆续穿行关隘。</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page 5: 奇遇罗盘 (Voyage) -->
+                <div class="cs-page cs-page-voyage" id="cs-tab-voyage">
+                    <h2 class="cs-page-title glow-text">奇遇罗盘</h2>
+                    <div class="cs-subtab-scroll-bar" id="cs-voyage-subtabs">
+                        <span class="cs-subtab-btn active" data-mod="map">未知漫游</span>
+                        <span class="cs-subtab-btn" data-mod="dungeon">秘境迷宫</span>
+                        <span class="cs-subtab-btn" data-mod="treasure">寻宝探秘</span>
+                        <span class="cs-subtab-btn" data-mod="cook">荒野野炊</span>
+                        <span class="cs-subtab-btn" data-mod="danger">突发险情</span>
+                        <span class="cs-subtab-btn" data-mod="beast">奇珍萌物</span>
+                    </div>
+
+                    <!-- 1. 未知漫游 -->
+                    <div class="cs-mod-pane active" id="cs-pane-map">
+                        <div class="cs-data-box">
+                            <div class="cs-box-title">秘境地界</div>
+                            <div class="cs-box-content highlight-text cs-field" id="cs-v-biome">倒流以太瀑布与悬空浮岛群</div>
+                            <div class="cs-box-content italic text-sm cs-field" id="cs-v-sense">瀑布水雾逆流向天际，空气弥漫清凉灵气。</div>
+                        </div>
+                        <div class="cs-data-box">
+                            <div class="cs-box-title">遇逢生灵</div>
+                            <div class="cs-box-content highlight-text cs-field" id="cs-v-race">居于云海草巢的灵性生命</div>
+                            <div class="cs-box-content text-sm cs-field" id="cs-v-traits">体态纤细，通过空灵声音交流。</div>
+                        </div>
+                        <div class="cs-data-box">
+                            <div class="cs-box-title">当地事态</div>
+                            <div class="cs-box-content highlight-text cs-field" id="cs-v-custom">正值一年一度的传统节日</div>
+                            <div class="cs-box-content text-sm cs-field" id="cs-v-incident">当地孩童好奇靠近，捧出发光花瓣。</div>
+                        </div>
+                        <div class="cs-data-box hover-lift">
+                            <div class="cs-box-title secret-text">旅伴相处</div>
+                            <div class="cs-box-content italic text-sm cs-field" id="cs-v-bond">他/她抱臂站在篝火边拂去尘露：“随你高兴罢。”</div>
+                        </div>
+                        <div class="cs-actions-row">
+                            <button type="button" class="cs-btn pulse-glow" id="cs-btn-roll-voyage">勘探未知</button>
+                            <button type="button" class="cs-btn primary" id="cs-btn-depart-voyage">向未知启程</button>
+                        </div>
+                    </div>
+
+                    <!-- 2. 秘境迷宫 -->
+                    <div class="cs-mod-pane cs-hidden" id="cs-pane-dungeon">
+                        <div class="cs-data-box"><div class="cs-box-title">禁区回廊</div><div class="cs-box-content highlight-text cs-field" id="cs-dg-name">【深海结晶灵庙】</div><div class="cs-box-content italic text-sm cs-field" id="cs-dg-desc">深埋在断层海沟中的古要塞。</div></div>
+                        <div class="cs-data-box"><div class="cs-box-title">迷宫机关</div><div class="cs-box-content text-sm cs-field" id="cs-dg-trap">两人需同时将以太注入两侧的共鸣石柱。</div></div>
+                        <div class="cs-data-box hover-lift"><div class="cs-box-title secret-text">终局秘境与恋人</div><div class="cs-box-content italic text-sm cs-field" id="cs-dg-reward">眼前豁然开朗，恋人牵住你的手：“总算没白陪你胡闹。”</div></div>
+                        <div class="cs-actions-row">
+                            <button type="button" class="cs-btn pulse-glow" id="cs-btn-roll-dungeon">探索新迷宫</button>
+                            <button type="button" class="cs-btn primary" id="cs-btn-send-dungeon">深入古禁区</button>
+                        </div>
+                    </div>
+
+                    <!-- 3. 寻宝探秘 -->
+                    <div class="cs-mod-pane cs-hidden" id="cs-pane-treasure">
+                        <div class="cs-data-box"><div class="cs-box-title">古图隐喻</div><div class="cs-box-content highlight-text cs-field" id="cs-tr-map">【泛黄的漂流密图】</div><div class="cs-box-content italic text-sm cs-field" id="cs-tr-riddle">“当双生圆月在断崖交叠，自会显露宝穴之口。”</div></div>
+                        <div class="cs-data-box hover-lift"><div class="cs-box-title secret-text">出土宝藏与趣闻</div><div class="cs-box-content italic text-sm cs-field" id="cs-tr-loot">一对随情绪变换颜色的水晶发簪，恋人亲手为你戴上一支。</div></div>
+                        <div class="cs-actions-row">
+                            <button type="button" class="cs-btn pulse-glow" id="cs-btn-roll-treasure">破译新宝图</button>
+                            <button type="button" class="cs-btn primary" id="cs-btn-send-treasure">按图寻宝</button>
+                        </div>
+                    </div>
+
+                    <!-- 4. 荒野野炊 -->
+                    <div class="cs-mod-pane cs-hidden" id="cs-pane-cook">
+                        <div class="cs-data-box"><div class="cs-box-title">风味美馔</div><div class="cs-box-content highlight-text cs-field" id="cs-ck-name">【浮岛晶鱼泥炉烧】</div><div class="cs-box-content italic text-sm cs-field" id="cs-ck-taste">初尝焦香爽脆，随后炸开清甜微酸。</div></div>
+                        <div class="cs-data-box hover-lift"><div class="cs-box-title secret-text">围炉相伴</div><div class="cs-box-content italic text-sm cs-field" id="cs-ck-bond">恋人细心地挑出鱼刺、吹凉了喂进你嘴里。</div></div>
+                        <div class="cs-actions-row">
+                            <button type="button" class="cs-btn pulse-glow" id="cs-btn-roll-cook">烹制新料理</button>
+                            <button type="button" class="cs-btn primary" id="cs-btn-send-cook">支锅尝野炊</button>
+                        </div>
+                    </div>
+
+                    <!-- 5. 突发险情 -->
+                    <div class="cs-mod-pane cs-hidden" id="cs-pane-danger">
+                        <div class="cs-data-box"><div class="cs-box-title">突发异变</div><div class="cs-box-content highlight-text cs-field" id="cs-dg-event">【避风岩隙紧急避难】</div><div class="cs-box-content text-sm cs-field" id="cs-dg-pinch">狭小空间紧紧相贴相拥，呼吸心跳交缠。</div></div>
+                        <div class="cs-data-box hover-lift"><div class="cs-box-title secret-text">恋人的庇护</div><div class="cs-box-content italic text-sm cs-field" id="cs-dg-reaction">单手死死将你护在怀里：“你若出事……我该怎么办？”</div></div>
+                        <div class="cs-actions-row">
+                            <button type="button" class="cs-btn pulse-glow" id="cs-btn-roll-danger">触发新险境</button>
+                            <button type="button" class="cs-btn primary" id="cs-btn-send-danger">历险相依</button>
+                        </div>
+                    </div>
+
+                    <!-- 6. 奇珍萌物 -->
+                    <div class="cs-mod-pane cs-hidden" id="cs-pane-beast">
+                        <div class="cs-data-box"><div class="cs-box-title">生灵命名</div><div class="cs-box-content highlight-text cs-field" id="cs-bt-name">【星尘夜光水豚】</div><div class="cs-box-content text-sm cs-field" id="cs-bt-habit">极度嗜睡，非要爬进斗篷口袋里打呼噜。</div></div>
+                        <div class="cs-data-box hover-lift"><div class="cs-box-title secret-text">旅伴的破防</div><div class="cs-box-content italic text-sm cs-field" id="cs-bt-bond">嘴上嫌弃“真脏”，身体却僵硬不敢乱动生怕惊醒它。</div></div>
+                        <div class="cs-actions-row">
+                            <button type="button" class="cs-btn pulse-glow" id="cs-btn-roll-beast">寻觅奇珍</button>
+                            <button type="button" class="cs-btn primary" id="cs-btn-send-beast">记录入图鉴</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page 6: 营火与旧梦 (Camp) -->
+                <div class="cs-page cs-page-camp" id="cs-tab-camp">
+                    <h2 class="cs-page-title glow-text">营火与旧梦</h2>
+                    <div class="cs-subtab-scroll-bar" id="cs-camp-subtabs">
+                        <span class="cs-subtab-btn active" data-mod="talk">深夜私语</span>
+                        <span class="cs-subtab-btn" data-mod="dream">昔日旧梦</span>
+                    </div>
+
+                    <div class="cs-mod-pane active" id="cs-pane-talk">
+                        <div class="cs-data-box">
+                            <div class="cs-box-title">今夜密语话题</div>
+                            <select id="cs-camp-topic-select" class="cs-select" style="width: 100%; margin-top: 6px;">
+                                <!-- 由动态词库填充 -->
+                            </select>
+                        </div>
+                        <div class="cs-actions-row" style="margin-top: 15px;">
+                            <button type="button" class="cs-btn primary pulse-glow" id="cs-btn-start-camp">进入深夜私语</button>
+                        </div>
+                    </div>
+
+                    <div class="cs-mod-pane cs-hidden" id="cs-pane-dream">
+                        <div class="cs-data-box hover-lift">
+                            <div class="cs-box-title">记忆切片</div>
+                            <div class="cs-box-content text-sm cs-field" id="cs-dream-scene">昔日并肩历经的风雨，如在眼前。</div>
+                            <div class="cs-divider" style="margin: 8px 0;"></div>
+                            <div class="cs-box-title secret-text">醒来时的现实抚慰</div>
+                            <div class="cs-box-content italic text-sm cs-field" id="cs-dream-awake">恋人抬手拭去你发梢夜露：“都过去了，我现在就在你身边。”</div>
+                        </div>
+                        <div class="cs-actions-row">
+                            <button type="button" class="cs-btn pulse-glow" id="cs-btn-roll-dream">触碰星海旧梦</button>
+                            <button type="button" class="cs-btn primary" id="cs-btn-send-dream">梦回昔年切片</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page 7: 信箱、行囊、拍立得 (Post) -->
+                <div class="cs-page cs-page-post" id="cs-tab-post">
+                    <h2 class="cs-page-title glow-text">信笺、行囊与快门</h2>
+                    <div class="cs-subtab-scroll-bar" id="cs-post-subtabs">
+                        <span class="cs-subtab-btn active" data-mod="bag">纪念行囊</span>
+                        <span class="cs-subtab-btn" data-mod="photo">旅途拍立得</span>
+                    </div>
+
+                    <div class="cs-mod-pane active" id="cs-pane-bag">
+                        <div class="cs-data-box hover-lift">
+                            <div class="cs-box-title cs-field" id="cs-souvenir-name">【风蚀空心鸣石】</div>
+                            <div class="cs-box-content text-sm cs-field" id="cs-souvenir-desc">在中空风蚀峡谷捡到的发鸣石，吹气会发出悠扬鸟鸣。</div>
+                            <div class="cs-divider"></div>
+                            <div class="cs-box-content italic text-sm secret-text cs-field" id="cs-souvenir-mem">恋人当初笑话你捡破烂，后来却偷偷找工匠用银丝给它打了挂绳。</div>
+                        </div>
+                        <div class="cs-actions-row">
+                            <button type="button" class="cs-btn pulse-glow" id="cs-btn-roll-bag">翻找行囊信物</button>
+                            <button type="button" class="cs-btn primary" id="cs-btn-send-bag">围炉聊聊旧物</button>
+                        </div>
+                    </div>
+
+                    <div class="cs-mod-pane cs-hidden" id="cs-pane-photo">
+                        <div class="cs-polaroid-frame">
+                            <div class="cs-polaroid-photo">
+                                <div class="cs-photo-scene cs-field" id="cs-ph-scene">【黄昏绝壁 · 双人反光剪影】</div>
+                                <div class="cs-photo-meta cs-field" id="cs-ph-meta">落日染红天际边缘，晚风吹乱了两人的披风</div>
+                            </div>
+                            <div class="cs-polaroid-caption">
+                                <div class="cs-caption-text italic secret-text cs-field" id="cs-ph-caption">“头发吹得像蓬松雀尾一样炸开。——真傻。但，还算好看。”</div>
+                                <div class="cs-caption-author cs-field" id="cs-ph-author">—— 恋人 墨水批注</div>
+                            </div>
+                        </div>
+                        <div class="cs-actions-row">
+                            <button type="button" class="cs-btn pulse-glow" id="cs-btn-roll-photo">抓拍心动瞬间</button>
+                            <button type="button" class="cs-btn primary" id="cs-btn-send-photo">定格旅人相册</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

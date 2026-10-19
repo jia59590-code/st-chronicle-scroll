@@ -1,0 +1,12 @@
+{
+  "name": "st-chronicle-scroll",
+  "display_name": "纪行手记 · Chronicle Scroll",
+  "version": "1.0.0",
+  "author": "墨月写卡工坊",
+  "description": "全景沉浸式动态状态栏与奇遇罗盘扩展。无需配置世界书，自动下发格式指令与抓取渲染，支持艾欧泽亚/现代双版本及无代码可视化词库定制。",
+  "loading_order": 20,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css"
+}
