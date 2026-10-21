@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SillyTavern 插件本地沙盒测试器 · 纪行手记</title>
+    <!-- 引入基础依赖：jQuery & toastr -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <!-- 插件的 CSS 样式 -->
+    <link rel="stylesheet" href="/scripts/extensions/third-party/st-chronicle-scroll/style.css">
+
+    <style>
+        :root {
+            --bg-color: #13151b;
+            --panel-bg: #1c1f2b;
+            --border-color: #2e3446;
+            --text-color: #e2e8f0;
+            --accent-gold: #c5a059;
+            --mes-user-bg: #1e293b;
+            --mes-ai-bg: #1a2233;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* 顶部状态条 */
+        .top-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 48px;
+            background: rgba(20, 23, 33, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+        }
+        .top-bar .brand {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .top-bar .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-top {
+            background: #252a3a;
+            border: 1px solid #3d465f;
+            color: #cbd5e1;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-top:hover {
+            background: #32394e;
+            border-color: var(--accent-gold);
+            color: #fff;
+        }
+
+        /* 主体布局 */
+        .main-layout {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 48px);
+            margin-top: 48px;
+        }
+
+        /* 聊天中央流 */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 20%;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .mes {
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 14.5px;
+            line-height: 1.6;
+            position: relative;
+        }
+        .mes.is_user {
+            align-self: flex-end;
+            background: var(--mes-user-bg);
+            border: 1px solid #334155;
+            border-bottom-right-radius: 2px;
+        }
+        .mes.is_ai {
+            align-self: flex-start;
+            background: var(--mes-ai-bg);
+            border: 1px solid #283548;
+            border-bottom-left-radius: 2px;
+        }
+        .mes-header {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--accent-gold);
+            opacity: 0.9;
+        }
+        .mes.is_user .mes-header {
+            color: #94a3b8;
+            text-align: right;
+        }
+
+        /* 底部输入框 */
+        .chat-input-bar {
+            padding: 14px 20%;
+            background: rgba(19, 21, 27, 0.9);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        #send_textarea {
+            flex: 1;
+            min-height: 48px;
+            max-height: 140px;
+            background: #181b24;
+            border: 1px solid #333c52;
+            color: #f1f5f9;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            resize: vertical;
+            line-height: 1.5;
+        }
+        #send_textarea:focus {
+            border-color: var(--accent-gold);
+        }
+        #send_but {
+            background: linear-gradient(135deg, #a27923 0%, #c5a059 100%);
+            border: none;
+            color: #111;
+            font-weight: 700;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            height: 48px;
+            transition: opacity 0.2s;
+        }
+        #send_but:hover {
+            opacity: 0.9;
+        }
+
+        /* 右侧 SillyTavern 扩展抽屉模拟区 */
+        .drawer-sidebar {
+            width: 340px;
+            background: var(--panel-bg);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            transition: width 0.3s;
+        }
+        .drawer-sidebar.collapsed {
+            width: 0;
+            overflow: hidden;
+            border-left: none;
+        }
+        .drawer-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            font-weight: 700;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #extensions_settings {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* 模拟酒馆原生 CSS 基础类 */
+        .menu_button {
+            background: #272d3e;
+            border: 1px solid #3d465f;
+            color: #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .menu_button:hover {
+            background: #32394e;
+            color: #fff;
+        }
+        .menu_button.primary {
+            background: #c5a059;
+            color: #1a1a1a;
+            font-weight: 600;
+            border: none;
+        }
+        .text_pole {
+            background: #141720;
+            border: 1px solid #333c52;
+            color: #e2e8f0;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            outline: none;
+        }
+        .text_pole:focus {
+            border-color: var(--accent-gold);
+        }
+
+        /* 快捷模拟条 */
+        .sandbox-quick-bar {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 50;
+        }
+        .quick-btn {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid #475569;
+            color: #f8fafc;
+            font-size: 11.5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
+        .quick-btn:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+        .debug-inspector {
+            position: fixed;
+            bottom: 75px;
+            left: 20px;
+            width: 480px;
+            max-height: 400px;
+            background: #11141d;
+            border: 1.5px solid var(--accent-gold);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 12px;
+        }
+        .debug-inspector-header {
+            background: #1c2130;
+            padding: 8px 12px;
+            border-bottom: 1px solid #2e364c;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            color: var(--accent-gold);
+        }
+        .debug-inspector-body {
+            padding: 12px;
+            overflow-y: auto;
+            flex: 1;
+            font-family: monospace;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            color: #cbd5e1;
+            background: #0d0f17;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部状态栏 -->
+    <header class="top-bar">
+        <div class="brand">
+            <span>⚔️</span> SillyTavern 插件本地沙盒测试器 · 纪行手记
+        </div>
+        <div class="controls">
+            <button type="button" class="btn-top" id="btn-toggle-inspector" style="border-color: #38bdf8; color: #38bdf8;">📡 发送指令抓包监视器</button>
+            <button type="button" class="btn-top" id="btn-toggle-drawer">扩展设置抽屉 (展开/折叠)</button>
+            <button type="button" class="btn-top" id="btn-sim-ai-reply" style="border-color: var(--accent-gold); color: #f7e696;">模拟 AI 回复手记</button>
+            <button type="button" class="btn-top" id="btn-clear-chat" style="color:#ef4444;">清空聊天</button>
+        </div>
+    </header>
+
+    <!-- 抓包监控浮窗 -->
+    <div class="debug-inspector" id="debug-inspector-wrapper">
+        <div class="debug-inspector-header">
+            <span>📡 抓包：实际发送给大模型的底层完整指令</span>
+            <span style="cursor:pointer;font-size:14px;" onclick="document.getElementById('debug-inspector-wrapper').style.display='none'">✖</span>
+        </div>
+        <div class="debug-inspector-body" id="debug-payload-content">尚未捕获到发送动作。请在手记中点击【向未知启程】、【深入探索】等动作按钮，实际发给 AI 的全部底层数据将在此实时高亮展示。</div>
+    </div>
+
+    <div class="main-layout">
+        <!-- 聊天流主区域 -->
+        <main class="chat-container">
+            <div class="sandbox-quick-bar">
+                <span class="quick-btn" onclick="injectMockMessage('eorzea')">注入奇幻手记楼层</span>
+                <span class="quick-btn" onclick="injectMockMessage('modern')">注入现代手记楼层</span>
+            </div>
+
+            <div class="chat-messages" id="chat-stream">
+                <!-- 预置首条系统欢迎消息 -->
+                <div class="mes is_ai" data-mesid="0">
+                    <div class="mes-header">秋青子 · 秘书蛇娘</div>
+                    <div class="mes_text">
+                        哥哥，这是为您量身打造的酒馆前端模拟沙盒环境。<br>
+                        屏幕中央是聊天气泡，右下角带有原汁原味的<strong>「纪行手记」悬浮书本图标</strong>；右侧是扩展设置抽屉，您可以随时点击上面的“模拟 AI 回复手记”或在下方发送动作测试联动效果！
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部输入框区 -->
+            <div class="chat-input-bar">
+                <textarea id="send_textarea" placeholder="输入你想说的话，或直接在手记里点击动作启程..."></textarea>
+                <button type="button" id="send_but">发送</button>
+            </div>
+        </main>
+
+        <!-- 右侧抽屉栏 (模拟 #extensions_settings) -->
+        <aside class="drawer-sidebar" id="drawer-sidebar">
+            <div class="drawer-header">
+                <span>EXTENSIONS SETTINGS</span>
+                <span style="font-size:11px;opacity:0.6;">SillyTavern Core Mock</span>
+            </div>
+            <div id="extensions_settings">
+                <!-- 插件的 settings.html 将动态挂载于此 -->
+            </div>
+        </aside>
+    </div>
+
+    <!-- ================= SillyTavern 核心对象与上下文 Mock ================= -->
+    <script>
+        class STEventSource {
+            constructor() {
+                this.listeners = {};
+            }
+            on(eventType, callback) {
+                if (!this.listeners[eventType]) this.listeners[eventType] = [];
+                this.listeners[eventType].push(callback);
+            }
+            emit(eventType, ...args) {
+                if (this.listeners[eventType]) {
+                    this.listeners[eventType].forEach(cb => {
+                        try { cb(...args); } catch(err) { console.error('[STEventError]', err); }
+                    });
+                }
+            }
+        }
+
+        const mockChat = [
+            {
+                mes: '哥哥，这是为您量身打造的酒馆前端模拟沙盒环境。',
+                is_user: false,
+                send_date: Date.now()
+            }
+        ];
+
+        const mockExtensionSettings = {
+            chronicle_scroll: {
+                enabled: true,
+                hideRawTag: true,
+                enableNarrativeGuide: true,
+                activePreset: 'eorzea',
+                customCategories: null
+            }
+        };
+
+        const mockEventSource = new STEventSource();
+        const mockEventTypes = {
+            CHARACTER_MESSAGE_RENDERED: 'CHARACTER_MESSAGE_RENDERED',
+            CHAT_COMPLETION_PROMPT_READY: 'CHAT_COMPLETION_PROMPT_READY',
+            MESSAGE_SENT: 'MESSAGE_SENT'
+        };
+
+        window.SillyTavern = {
+            getContext: function () {
+                return {
+                    chat: mockChat,
+                    extensionSettings: mockExtensionSettings,
+                    saveSettingsDebounced: function () {
+                        console.log('[MockST] 扩展配置已保存:', JSON.stringify(mockExtensionSettings));
+                    },
+                    setExtensionPrompt: function (name, prompt, pos, depth, scan) {
+                        console.log(`[MockST] 提示词注入 [${name}]:`, prompt ? prompt.substring(0, 100) + '...' : '(清空)');
+                    },
+                    eventSource: mockEventSource,
+                    eventTypes: mockEventTypes
+                };
+            }
+        };
+
+        // 切换抽屉展开/折叠
+        document.getElementById('btn-toggle-drawer').addEventListener('click', () => {
+            document.getElementById('drawer-sidebar').classList.toggle('collapsed');
+        });
+
+        // 切换抓包监视器浮窗
+        document.getElementById('btn-toggle-inspector')?.addEventListener('click', () => {
+            const wrap = document.getElementById('debug-inspector-wrapper');
+            if (wrap) {
+                wrap.style.display = (wrap.style.display === 'none' || !wrap.style.display) ? 'flex' : 'none';
+            }
+        });
+
+        // 清空聊天
+        document.getElementById('btn-clear-chat').addEventListener('click', () => {
+            document.getElementById('chat-stream').innerHTML = '';
+            mockChat.length = 0;
+            toastr.info('聊天流已清空');
+        });
+
+        // 模拟消息渲染与添加
+        function appendUserMessage(text, rawVal) {
+            const mesId = mockChat.length;
+            const fullContent = rawVal || text;
+            mockChat.push({ mes: fullContent, is_user: true, send_date: Date.now() });
+
+            const mesDiv = document.createElement('div');
+            mesDiv.className = 'mes is_user';
+            mesDiv.setAttribute('data-mesid', mesId);
+            mesDiv.setAttribute('mesid', mesId);
+            mesDiv.innerHTML = `
+                <div class="mes-header">你 (冒险者)</div>
+                <div class="mes_text">${renderSafeHtml(fullContent)}</div>
+            `;
+            document.getElementById('chat-stream').appendChild(mesDiv);
+            mesDiv.scrollIntoView({ behavior: 'smooth' });
+
+            mockEventSource.emit(mockEventTypes.USER_MESSAGE_RENDERED, mesId);
+            return mesId;
+        }
+
+        function appendAIMessage(rawContent) {
+            const mesId = mockChat.length;
+            mockChat.push({ mes: rawContent, is_user: false, send_date: Date.now() });
+
+            const mesDiv = document.createElement('div');
+            mesDiv.className = 'mes is_ai';
+            mesDiv.setAttribute('data-mesid', mesId);
+            mesDiv.setAttribute('mesid', mesId);
+            mesDiv.innerHTML = `
+                <div class="mes-header">同行旅伴</div>
+                <div class="mes_text">${renderSafeHtml(rawContent)}</div>
+            `;
+            document.getElementById('chat-stream').appendChild(mesDiv);
+            mesDiv.scrollIntoView({ behavior: 'smooth' });
+
+            // 触发 SillyTavern 官方消息渲染事件（插件监听此事件解析手记标签并洁净隐藏）
+            mockEventSource.emit(mockEventTypes.CHARACTER_MESSAGE_RENDERED, mesId);
+        }
+
+        // 真实还原酒馆 Markdown 渲染行为：支持保留 <div style="display:none"> 与 <fantasy_scroll>
+        function renderSafeHtml(rawText) {
+            if (!rawText) return '';
+            // 将普通文本换行转为 <br>，保留隐藏层与手记层标签结构
+            return rawText
+                .replace(/\r\n/g, '\n')
+                .replace(/\n/g, '<br>');
+        }
+
+        // 快捷模拟带有 <fantasy_scroll> 的回复
+        function injectMockMessage(type = 'eorzea') {
+            if (type === 'eorzea') {
+                const sampleEorzea = `
+“收拾好行囊了么？那就出发罢。”
+他整了整斗篷领口，目光掠过远方以太瀑布泛起的漫天水雾。微风拂过，长发与衣摆在流光中轻扬。
+<fantasy_scroll>
+[Env|时间=金霞黄昏;;天候=轻灵风象;;地界=倒流以太瀑布悬空浮岛;;环境观察=瀑布水汽逆流向天穹，折射出双重彩虹，空气弥漫清冽以太灵香]
+[User|身份职业=拂晓同盟大贤者;;身心状态=神完气足;;神态装束=素雅白袍配星轨暗纹;;随身所持=星盘与古代手记]
+[Party|爱梅特赛尔克::见证者::神色慵懒抱臂::随行漫步 (独行则填: 独行::冒险者::从容::独自行动)]
+[Lover|注目角色=爱梅特赛尔克;;关系距离=莫逆之交;;表面心境=嘴硬嫌弃此地潮湿;;深层隐微=始终默默走在你迎风一侧替你挡住风雨]
+[World|萨雷安暗流::议会正秘密派员勘测地脉异象;;市井流言::黑衣森林的妖精们似乎在举办新的集会]
+[Quest|当前事态=正在浮岛废墟间寻找古老以太共鸣石柱;;暗流线索=断崖裂隙中隐隐泛着奇异微光;;心念所向=在天黑前搭建营火或深入古回廊]
+</fantasy_scroll>
+                `.trim();
+                appendAIMessage(sampleEorzea);
+            } else {
+                const sampleModern = `
+“走吧，雨停了，刚好带你去尝尝那家老字号的芝士拉面。”
+恋人把长风衣扣紧，顺便伸手帮你理顺了被风吹乱的刘海，掌心温热。
+<fantasy_scroll>
+[Env|时间=深夜两点半;;天候=微凉细雨初歇;;地界=老城区黑胶咖啡馆街角;;环境观察=霓虹灯倒映在潮湿柏油路面上，空气带着雨后泥土与咖啡醇香]
+[User|身份职业=自由设计师;;身心状态=微感疲惫但心情舒展;;神态装束=重磅连帽卫衣配复古跑鞋;;随身所持=胶片相机与老电影票根]
+[Party|同行恋人::伴侣::眼含笑意单手插兜::并肩漫步]
+[Lover|注目角色=同行恋人;;关系距离=心有灵犀;;表面心境=打趣某人走得太慢;;深层隐微=把你的手悄悄揣进自己大衣口袋里握紧]
+[World|商圈速报::周末天台音乐节即将开幕;;夜市传闻::街角网红甜品摊今晚买一送一]
+[Quest|当前事态=两人正踩着水洼慢步穿行在寂静街区;;暗流线索=前方的24小时便利店还亮着暖黄灯火;;心念所向=去阳台小憩还是就着温热麦茶聊聊心事]
+</fantasy_scroll>
+                `.trim();
+                appendAIMessage(sampleModern);
+            }
+        }
+
+        // 绑定模拟 AI 回复按钮
+        document.getElementById('btn-sim-ai-reply').addEventListener('click', () => {
+            const preset = mockExtensionSettings.chronicle_scroll.activePreset;
+            injectMockMessage(preset === 'modern' ? 'modern' : 'eorzea');
+        });
+
+        // 监听用户在 #send_but 的点击行为（手记发送也是触发这个）
+        document.getElementById('send_but').addEventListener('click', () => {
+            const textarea = document.getElementById('send_textarea');
+            const val = textarea.value.trim();
+            if (!val) return;
+
+            // 记录到抓包监视器中
+            recordSentPayload(val);
+
+            // 过滤掉隐藏指令，只在聊天框显示自然文本
+            let displayText = val.replace(/<div style="display:none">[\s\S]*?<\/div>/gi, '').trim();
+            if (!displayText) displayText = '（默默启程）';
+            
+            appendUserMessage(displayText, val);
+            textarea.value = '';
+
+            // 模拟 AI 在 800ms 后自动产生呼应回复
+            setTimeout(() => {
+                const preset = mockExtensionSettings.chronicle_scroll.activePreset;
+                injectMockMessage(preset === 'modern' ? 'modern' : 'eorzea');
+            }, 800);
+        });
+
+        // 实时指令抓包面板
+        function recordSentPayload(rawPayload) {
+            const inspector = document.getElementById('debug-payload-content');
+            const inspectorWrap = document.getElementById('debug-inspector-wrapper');
+            if (inspector) {
+                inspector.textContent = rawPayload;
+                inspectorWrap.style.display = 'block';
+            }
+            console.log('[ChronicleScroll Sent Payload]:\n', rawPayload);
+        }
+    </script>
+
+    <!-- 加载插件的主逻辑脚本 -->
+    <script src="/scripts/extensions/third-party/st-chronicle-scroll/index.js"></script>
+</body>
+</html>

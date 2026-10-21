@@ -322,21 +322,39 @@
         const msg = chat[messageId];
         if (!msg || !msg.mes) return;
 
-        const regex = /<(?:fantasy_scroll|adventure_scroll)>([\s\S]*?)<\/(?:fantasy_scroll|adventure_scroll)>/i;
+        // 兼容原始标签与可能被酒馆 Markdown 转义的实体标签
+        const regex = /(?:<|&lt;)(?:fantasy_scroll|adventure_scroll)(?:>|&gt;)([\s\S]*?)(?:<|&lt;)\/(?:fantasy_scroll|adventure_scroll)(?:>|&gt;)/i;
         const match = msg.mes.match(regex);
         if (match) {
             parseScrollData(match[1]);
 
             const settings = getSettings();
             if (settings.hideRawTag) {
-                const messageDom = document.querySelector(`.mes[mesid="${messageId}"] .mes_text`);
+                const messageDom = document.querySelector(`.mes[mesid="${messageId}"] .mes_text`) ||
+                                   document.querySelector(`.mes[data-mesid="${messageId}"] .mes_text`);
                 if (messageDom) {
                     messageDom.innerHTML = messageDom.innerHTML.replace(
-                        /<(?:fantasy_scroll|adventure_scroll)>[\s\S]*?<\/(?:fantasy_scroll|adventure_scroll)>/gi,
+                        /(?:<|&lt;)(?:fantasy_scroll|adventure_scroll)(?:>|&gt;)[\s\S]*?(?:<|&lt;)\/(?:fantasy_scroll|adventure_scroll)(?:>|&gt;)/gi,
                         '<div class="cs-badge-pill" style="margin-top:6px;padding:2px 8px;display:inline-block;border-radius:10px;background:rgba(179,135,40,0.15);font-size:11px;color:#a67c1e;">[已记录入手记]</div>'
                     );
                 }
             }
+        }
+    }
+
+    /**
+     * 用户消息渲染拦截（确保用户输出端中的隐藏指令彻底洁净）
+     */
+    function onUserMessageRendered(messageId) {
+        const messageDom = document.querySelector(`.mes[mesid="${messageId}"] .mes_text`);
+        if (!messageDom) return;
+
+        // 如果用户发送的消息包含 <div style="display:none"> 隐藏块或原始标签，确保在前端楼层彻底隐藏
+        if (messageDom.innerHTML.includes('style="display:none"') || messageDom.innerHTML.includes('&lt;div style="display:none"&gt;')) {
+            messageDom.innerHTML = messageDom.innerHTML
+                .replace(/<div style="display:none">[\s\S]*?<\/div>/gi, '')
+                .replace(/&lt;div style="display:none"&gt;[\s\S]*?&lt;\/div&gt;/gi, '')
+                .trim();
         }
     }
 
@@ -348,6 +366,10 @@
         if (settings.enableNarrativeGuide && moduleKey && NARRATIVE_GUIDES[moduleKey]) {
             hiddenDirectives += (hiddenDirectives ? '\n\n' : '') + NARRATIVE_GUIDES[moduleKey].trim();
         }
+
+        // 状态栏强约束双保险：防止长剧情引导冲淡系统提示词，确保无论何时点击模块，AI 回复末尾必出状态栏
+        hiddenDirectives += (hiddenDirectives ? '\n\n' : '') +
+            '【手记状态栏硬性要求】：无论本次剧情如何展开，在本次回复的最末尾，必须严格按照 <fantasy_scroll> 规范完整输出当前冒险手记数据块，严禁遗漏！';
 
         if (hiddenDirectives) {
             payload = `${payload}\n<div style="display:none">\n${hiddenDirectives}\n</div>`;
@@ -435,20 +457,30 @@
             this.classList.toggle('flipped');
         });
 
-        const bindSubtabs = (containerId, panePrefix) => {
-            document.querySelectorAll(`#${containerId} .cs-subtab-btn`).forEach(btn => {
+        const bindSubtabs = (containerId, parentPageId) => {
+            const container = document.getElementById(containerId);
+            const parentPage = document.getElementById(parentPageId);
+            if (!container || !parentPage) return;
+
+            container.querySelectorAll('.cs-subtab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    document.querySelectorAll(`#${containerId} .cs-subtab-btn`).forEach(b => b.classList.remove('active'));
+                    container.querySelectorAll('.cs-subtab-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     const mod = btn.getAttribute('data-mod');
-                    document.querySelectorAll(`[id^="${panePrefix}"]`).forEach(p => p.classList.add('cs-hidden'));
-                    document.getElementById(`${panePrefix}${mod}`)?.classList.remove('cs-hidden');
+
+                    parentPage.querySelectorAll('.cs-mod-pane').forEach(p => {
+                        p.classList.add('cs-hidden');
+                    });
+                    const targetPane = document.getElementById(`cs-pane-${mod}`);
+                    if (targetPane) {
+                        targetPane.classList.remove('cs-hidden');
+                    }
                 });
             });
         };
-        bindSubtabs('cs-voyage-subtabs', 'cs-pane-');
-        bindSubtabs('cs-camp-subtabs', 'cs-pane-');
-        bindSubtabs('cs-post-subtabs', 'cs-pane-');
+        bindSubtabs('cs-voyage-subtabs', 'cs-tab-voyage');
+        bindSubtabs('cs-camp-subtabs', 'cs-tab-camp');
+        bindSubtabs('cs-post-subtabs', 'cs-tab-post');
 
         bindGameplayMatrixActions();
         updateModalTitles();
@@ -462,87 +494,106 @@
         document.getElementById('cs-btn-roll-voyage')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('voyage');
             if (!roll) return;
-            document.getElementById('cs-v-biome').textContent = roll.biome;
-            document.getElementById('cs-v-race').textContent = roll.race;
-            document.getElementById('cs-v-custom').textContent = roll.custom;
-            document.getElementById('cs-v-bond').textContent = roll.bond;
+            if (roll.biome) document.getElementById('cs-v-biome').textContent = roll.biome;
+            if (roll.race) document.getElementById('cs-v-race').textContent = roll.race;
+            if (roll.custom) document.getElementById('cs-v-custom').textContent = roll.custom;
+            if (roll.bond) document.getElementById('cs-v-bond').textContent = roll.bond;
         });
 
         document.getElementById('cs-btn-depart-voyage')?.addEventListener('click', () => {
-            const roll = currentRolls.voyage.biome ? currentRolls.voyage : rollCategoryMatrix('voyage');
-            if (roll && roll.biome) {
-                const speech = `让我们启程前往【${roll.biome}】吧。`;
-                const raw = `[纪行手记·漫游探索]：\n- 目标地界：【${roll.biome}】\n- 遇逢群体：【${roll.race}】\n- 当地事态：【${roll.custom}】\n- 旅伴相处：【${roll.bond}】`;
-                executeSend(speech, raw, 'voyage');
-            }
+            const biome = currentRolls.voyage?.biome || document.getElementById('cs-v-biome')?.textContent?.trim() || '倒流以太瀑布与悬空浮岛群';
+            const race = currentRolls.voyage?.race || document.getElementById('cs-v-race')?.textContent?.trim() || '灵性生命';
+            const custom = currentRolls.voyage?.custom || document.getElementById('cs-v-custom')?.textContent?.trim() || '传统风土';
+            const bond = currentRolls.voyage?.bond || document.getElementById('cs-v-bond')?.textContent?.trim() || '并肩相伴';
+
+            const speech = `让我们启程前往【${biome}】吧。`;
+            const raw = `[纪行手记·漫游探索]：\n- 目标地界：【${biome}】\n- 遇逢群体：【${race}】\n- 当地事态：【${custom}】\n- 旅伴相处：【${bond}】`;
+            executeSend(speech, raw, 'voyage');
         });
 
         // 秘境迷宫 / 特色探店
         document.getElementById('cs-btn-roll-dungeon')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('dungeon');
             if (!roll) return;
-            document.getElementById('cs-dg-name').textContent = roll.name;
-            document.getElementById('cs-dg-trap').textContent = roll.trap;
-            document.getElementById('cs-dg-reward').textContent = roll.reward;
+            if (roll.name) document.getElementById('cs-dg-name').textContent = roll.name;
+            if (roll.trap) document.getElementById('cs-dg-trap').textContent = roll.trap;
+            if (roll.reward) document.getElementById('cs-dg-reward').textContent = roll.reward;
         });
         document.getElementById('cs-btn-send-dungeon')?.addEventListener('click', () => {
-            const roll = currentRolls.dungeon.name ? currentRolls.dungeon : rollCategoryMatrix('dungeon');
-            if (roll && roll.name) {
-                const speech = `深入探索${roll.name}。`;
-                const raw = `[纪行手记·探秘探险]：\n- 探索区域：${roll.name}\n- 机关阻碍：${roll.trap}\n- 终局相守：${roll.reward}`;
-                executeSend(speech, raw, 'dungeon');
-            }
+            const name = currentRolls.dungeon?.name || document.getElementById('cs-dg-name')?.textContent?.trim() || '深海结晶灵庙';
+            const trap = currentRolls.dungeon?.trap || document.getElementById('cs-dg-trap')?.textContent?.trim() || '需同时注入以太共鸣';
+            const reward = currentRolls.dungeon?.reward || document.getElementById('cs-dg-reward')?.textContent?.trim() || '执手并肩到达终点';
+            const speech = `深入探索【${name}】。`;
+            const raw = `[纪行手记·探秘探险]：\n- 探索区域：${name}\n- 机关阻碍：${trap}\n- 终局相守：${reward}`;
+            executeSend(speech, raw, 'dungeon');
+        });
+
+        // 寻宝探秘
+        document.getElementById('cs-btn-roll-treasure')?.addEventListener('click', () => {
+            const roll = rollCategoryMatrix('treasure') || rollCategoryMatrix('dungeon');
+            if (!roll) return;
+            if (roll.map) document.getElementById('cs-tr-map').textContent = roll.map;
+            if (roll.riddle) document.getElementById('cs-tr-riddle').textContent = roll.riddle;
+            if (roll.loot) document.getElementById('cs-tr-loot').textContent = roll.loot;
+        });
+        document.getElementById('cs-btn-send-treasure')?.addEventListener('click', () => {
+            const map = currentRolls.treasure?.map || document.getElementById('cs-tr-map')?.textContent?.trim() || '泛黄的漂流密图';
+            const riddle = currentRolls.treasure?.riddle || document.getElementById('cs-tr-riddle')?.textContent?.trim() || '当双生圆月在断崖交叠，显露宝穴之口';
+            const loot = currentRolls.treasure?.loot || document.getElementById('cs-tr-loot')?.textContent?.trim() || '水晶发簪，恋人亲手为你戴上一支';
+            const speech = `按照【${map}】的线索，我们前去探秘寻宝。`;
+            const raw = `[纪行手记·寻宝探秘]：\n- 宝图线索：${map}（${riddle}）\n- 挖掘收获：${loot}`;
+            executeSend(speech, raw, 'dungeon');
         });
 
         // 荒野野炊 / 深夜食堂
         document.getElementById('cs-btn-roll-cook')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('cook');
             if (!roll) return;
-            document.getElementById('cs-ck-name').textContent = roll.dish;
-            document.getElementById('cs-ck-taste').textContent = roll.taste;
-            document.getElementById('cs-ck-bond').textContent = roll.bond;
+            if (roll.dish) document.getElementById('cs-ck-name').textContent = roll.dish;
+            if (roll.taste) document.getElementById('cs-ck-taste').textContent = roll.taste;
+            if (roll.bond) document.getElementById('cs-ck-bond').textContent = roll.bond;
         });
         document.getElementById('cs-btn-send-cook')?.addEventListener('click', () => {
-            const roll = currentRolls.cook.dish ? currentRolls.cook : rollCategoryMatrix('cook');
-            if (roll && roll.dish) {
-                const speech = `动手支锅，尝尝新烹制的${roll.dish}。`;
-                const raw = `[纪行手记·美食品尝]：\n- 美馔佳肴：${roll.dish}\n- 诱人口感：${roll.taste}\n- 围炉相伴：${roll.bond}`;
-                executeSend(speech, raw, 'cook');
-            }
+            const dish = currentRolls.cook?.dish || document.getElementById('cs-ck-name')?.textContent?.trim() || '浮岛晶鱼泥炉烧';
+            const taste = currentRolls.cook?.taste || document.getElementById('cs-ck-taste')?.textContent?.trim() || '初尝焦香爽脆，随后炸开清甜微酸';
+            const bond = currentRolls.cook?.bond || document.getElementById('cs-ck-bond')?.textContent?.trim() || '细心挑出鱼刺喂食';
+            const speech = `动手支锅，尝尝新烹制的【${dish}】。`;
+            const raw = `[纪行手记·美食品尝]：\n- 美馔佳肴：${dish}\n- 诱人口感：${taste}\n- 围炉相伴：${bond}`;
+            executeSend(speech, raw, 'cook');
         });
 
         // 突发险情 / 意外插曲
         document.getElementById('cs-btn-roll-danger')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('danger');
             if (!roll) return;
-            document.getElementById('cs-dg-event').textContent = roll.event;
-            document.getElementById('cs-dg-pinch').textContent = roll.pinch;
-            document.getElementById('cs-dg-reaction').textContent = roll.reaction;
+            if (roll.event) document.getElementById('cs-dg-event').textContent = roll.event;
+            if (roll.pinch) document.getElementById('cs-dg-pinch').textContent = roll.pinch;
+            if (roll.reaction) document.getElementById('cs-dg-reaction').textContent = roll.reaction;
         });
         document.getElementById('cs-btn-send-danger')?.addEventListener('click', () => {
-            const roll = currentRolls.danger.event ? currentRolls.danger : rollCategoryMatrix('danger');
-            if (roll && roll.event) {
-                const speech = `面对突发异变${roll.event}，我们相依突围。`;
-                const raw = `[纪行手记·突发意外]：\n- 突发事态：${roll.event}\n- 贴身困境：${roll.pinch}\n- 恋人庇护：${roll.reaction}`;
-                executeSend(speech, raw, 'danger');
-            }
+            const event = currentRolls.danger?.event || document.getElementById('cs-dg-event')?.textContent?.trim() || '避风岩隙紧急避难';
+            const pinch = currentRolls.danger?.pinch || document.getElementById('cs-dg-pinch')?.textContent?.trim() || '狭小空间紧紧相贴相拥';
+            const reaction = currentRolls.danger?.reaction || document.getElementById('cs-dg-reaction')?.textContent?.trim() || '死死护在怀里';
+            const speech = `面对突发异变【${event}】，我们相依突围。`;
+            const raw = `[纪行手记·突发意外]：\n- 突发事态：${event}\n- 贴身困境：${pinch}\n- 恋人庇护：${reaction}`;
+            executeSend(speech, raw, 'danger');
         });
 
         // 奇珍萌物 / 街角萌宠
         document.getElementById('cs-btn-roll-beast')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('beast');
             if (!roll) return;
-            document.getElementById('cs-bt-name').textContent = roll.name;
-            document.getElementById('cs-bt-habit').textContent = roll.habit;
-            document.getElementById('cs-bt-bond').textContent = roll.bond;
+            if (roll.name) document.getElementById('cs-bt-name').textContent = roll.name;
+            if (roll.habit) document.getElementById('cs-bt-habit').textContent = roll.habit;
+            if (roll.bond) document.getElementById('cs-bt-bond').textContent = roll.bond;
         });
         document.getElementById('cs-btn-send-beast')?.addEventListener('click', () => {
-            const roll = currentRolls.beast.name ? currentRolls.beast : rollCategoryMatrix('beast');
-            if (roll && roll.name) {
-                const speech = `记录萌宠【${roll.name}】入图鉴。`;
-                const raw = `[纪行手记·奇珍萌宠]：\n- 生灵形态：${roll.name}\n- 灵动习性：${roll.habit}\n- 恋人破防：${roll.bond}`;
-                executeSend(speech, raw, 'beast');
-            }
+            const name = currentRolls.beast?.name || document.getElementById('cs-bt-name')?.textContent?.trim() || '星尘夜光水豚';
+            const habit = currentRolls.beast?.habit || document.getElementById('cs-bt-habit')?.textContent?.trim() || '爬进斗篷口袋打呼噜';
+            const bond = currentRolls.beast?.bond || document.getElementById('cs-bt-bond')?.textContent?.trim() || '身体僵硬不敢乱动';
+            const speech = `记录萌宠【${name}】入图鉴。`;
+            const raw = `[纪行手记·奇珍萌宠]：\n- 生灵形态：${name}\n- 灵动习性：${habit}\n- 恋人破防：${bond}`;
+            executeSend(speech, raw, 'beast');
         });
 
         // 营火夜谈 / 静谧夜话
@@ -557,12 +608,12 @@
         // 星海旧梦
         document.getElementById('cs-btn-roll-dream')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('dream') || { scene: '昔日并肩历经的风雨，如在眼前。', awake: '恋人抬手拭去你发梢夜露：“都过去了，我现在就在你身边。”' };
-            document.getElementById('cs-dream-scene').textContent = roll.scene;
-            document.getElementById('cs-dream-awake').textContent = roll.awake;
+            if (roll.scene) document.getElementById('cs-dream-scene').textContent = roll.scene;
+            if (roll.awake) document.getElementById('cs-dream-awake').textContent = roll.awake;
         });
         document.getElementById('cs-btn-send-dream')?.addEventListener('click', () => {
-            const scene = document.getElementById('cs-dream-scene')?.textContent || '';
-            const awake = document.getElementById('cs-dream-awake')?.textContent || '';
+            const scene = document.getElementById('cs-dream-scene')?.textContent?.trim() || '昔日并肩历经的风雨，如在眼前。';
+            const awake = document.getElementById('cs-dream-awake')?.textContent?.trim() || '恋人抬手拭去发梢夜露安抚';
             const speech = `从旧日梦境中醒来，揉了揉发酸的眼角：“……我又梦见那时候的事情了。”`;
             const raw = `[纪行手记·星海旧梦]：\n- 昔年切片：${scene}\n- 醒后抚慰：${awake}`;
             executeSend(speech, raw, 'dream');
@@ -572,34 +623,34 @@
         document.getElementById('cs-btn-roll-bag')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('souvenirs');
             if (!roll) return;
-            document.getElementById('cs-souvenir-name').textContent = roll.name;
-            document.getElementById('cs-souvenir-desc').textContent = roll.desc;
-            document.getElementById('cs-souvenir-mem').textContent = roll.mem;
+            if (roll.name) document.getElementById('cs-souvenir-name').textContent = roll.name;
+            if (roll.desc) document.getElementById('cs-souvenir-desc').textContent = roll.desc;
+            if (roll.mem) document.getElementById('cs-souvenir-mem').textContent = roll.mem;
         });
         document.getElementById('cs-btn-send-bag')?.addEventListener('click', () => {
-            const roll = currentRolls.souvenirs.name ? currentRolls.souvenirs : rollCategoryMatrix('souvenirs');
-            if (roll && roll.name) {
-                const speech = `从行囊里翻出${roll.name}，聊聊旧事。`;
-                const raw = `[纪行手记·睹物旧忆]：\n- 风物信物：${roll.name}（${roll.desc}）\n- 背后记忆：${roll.mem}`;
-                executeSend(speech, raw, 'souvenirs');
-            }
+            const name = currentRolls.souvenirs?.name || document.getElementById('cs-souvenir-name')?.textContent?.trim() || '风蚀空心鸣石';
+            const desc = currentRolls.souvenirs?.desc || document.getElementById('cs-souvenir-desc')?.textContent?.trim() || '在中空风蚀峡谷捡到的发鸣石';
+            const mem = currentRolls.souvenirs?.mem || document.getElementById('cs-souvenir-mem')?.textContent?.trim() || '恋人偷偷找工匠用银丝给它打了挂绳';
+            const speech = `从行囊里翻出【${name}】，聊聊旧事。`;
+            const raw = `[纪行手记·睹物旧忆]：\n- 风物信物：${name}（${desc}）\n- 背后记忆：${mem}`;
+            executeSend(speech, raw, 'souvenirs');
         });
 
         // 拍立得
         document.getElementById('cs-btn-roll-photo')?.addEventListener('click', () => {
             const roll = rollCategoryMatrix('photos');
             if (!roll) return;
-            document.getElementById('cs-ph-scene').textContent = roll.scene;
-            document.getElementById('cs-ph-meta').textContent = roll.meta;
-            document.getElementById('cs-ph-caption').textContent = roll.caption;
+            if (roll.scene) document.getElementById('cs-ph-scene').textContent = roll.scene;
+            if (roll.meta) document.getElementById('cs-ph-meta').textContent = roll.meta;
+            if (roll.caption) document.getElementById('cs-ph-caption').textContent = roll.caption;
         });
         document.getElementById('cs-btn-send-photo')?.addEventListener('click', () => {
-            const roll = currentRolls.photos.scene ? currentRolls.photos : rollCategoryMatrix('photos');
-            if (roll && roll.scene) {
-                const speech = `按动快门，定格这一瞬的记忆。`;
-                const raw = `[纪行手记·旅途拍立得]：\n- 镜头场景：${roll.scene}（${roll.meta}）\n- 伴侣手记批注：${roll.caption}`;
-                executeSend(speech, raw, 'photos');
-            }
+            const scene = currentRolls.photos?.scene || document.getElementById('cs-ph-scene')?.textContent?.trim() || '黄昏绝壁 · 双人反光剪影';
+            const meta = currentRolls.photos?.meta || document.getElementById('cs-ph-meta')?.textContent?.trim() || '落日染红天际边缘';
+            const caption = currentRolls.photos?.caption || document.getElementById('cs-ph-caption')?.textContent?.trim() || '头发吹得像蓬松雀尾一样炸开。——真傻。但，还算好看。';
+            const speech = `按动快门，定格这一瞬的记忆。`;
+            const raw = `[纪行手记·旅途拍立得]：\n- 镜头场景：${scene}（${meta}）\n- 伴侣手记批注：${caption}`;
+            executeSend(speech, raw, 'photos');
         });
 
         // 双人风尚衣箱 / 情侣穿搭
@@ -934,6 +985,9 @@
 
         if (eventSource && eventTypes) {
             eventSource.on(eventTypes.CHARACTER_MESSAGE_RENDERED, (msgId) => onCharacterMessageRendered(msgId));
+            if (eventTypes.USER_MESSAGE_RENDERED) {
+                eventSource.on(eventTypes.USER_MESSAGE_RENDERED, (msgId) => onUserMessageRendered(msgId));
+            }
             eventSource.on(eventTypes.CHAT_COMPLETION_PROMPT_READY, () => updateExtensionPrompt());
         }
 

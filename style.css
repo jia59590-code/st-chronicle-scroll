@@ -72,7 +72,18 @@
     padding: 15px;
     box-sizing: border-box;
 }
-.cs-modal-wrapper.cs-hidden { display: none !important; }
+.cs-hidden { display: none !important; }
+.cs-mod-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: csSubtabFade 0.2s ease forwards;
+}
+.cs-mod-pane.cs-hidden { display: none !important; }
+@keyframes csSubtabFade {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 .cs-backdrop {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.65);
